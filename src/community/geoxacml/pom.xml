@@ -18,8 +18,22 @@
   <groupId>org.geoserver</groupId>
   <artifactId>geoxacml</artifactId>
   <packaging>jar</packaging>
-  <version>1.0</version>
   <name>GeoXACML Module</name>
+
+  <build>
+   <plugins>
+     <plugin>
+      <artifactId>maven-assembly-plugin</artifactId>
+      <version>2.1</version>
+      <configuration>
+        <descriptors>
+          <descriptor>release/ext-geoxacml.xml</descriptor>
+        </descriptors>
+      </configuration>
+     </plugin>
+  </plugins>
+  </build>
+
 
   <dependencies>
   
@@ -57,15 +71,20 @@
       <artifactId>rest</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.springframework.security</groupId>
-      <artifactId>spring-security-core</artifactId>
+        <groupId>org.springframework.security</groupId>
+        <artifactId>spring-security-core</artifactId>
+        <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>org.springframework.security</groupId>
-      <artifactId>spring-security-core</artifactId>
-      <classifier>tests</classifier>
-      <scope>test</scope>
-    </dependency>            
+        <groupId>org.springframework.security</groupId>
+        <artifactId>spring-security-web</artifactId>
+        <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.geoserver.web</groupId>
+      <artifactId>web-security</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <dependency>
       <groupId>org.geoserver</groupId>
       <artifactId>main</artifactId>

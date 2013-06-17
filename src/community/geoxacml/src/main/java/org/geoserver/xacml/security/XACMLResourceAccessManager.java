@@ -11,13 +11,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import org.springframework.security.Authentication;
-import org.springframework.security.GrantedAuthority;
 import org.geoserver.catalog.LayerInfo;
 import org.geoserver.catalog.ResourceInfo;
 import org.geoserver.catalog.WorkspaceInfo;
 import org.geoserver.security.AccessMode;
-import org.geoserver.security.DataAccessManager;
 import org.geoserver.xacml.geoxacml.GeoXACMLConfig;
 import org.geoserver.xacml.geoxacml.XACMLConstants;
 import org.geoserver.xacml.geoxacml.XACMLUtil;
@@ -29,16 +26,39 @@ import com.sun.xacml.ctx.Attribute;
 import com.sun.xacml.ctx.RequestCtx;
 import com.sun.xacml.ctx.ResponseCtx;
 import com.sun.xacml.ctx.Result;
+import java.util.logging.Level;
+import org.geoserver.catalog.CoverageInfo;
+import org.geoserver.catalog.FeatureTypeInfo;
+import org.geoserver.catalog.LayerGroupInfo;
+import org.geoserver.catalog.StyleInfo;
+import org.geoserver.catalog.WMSLayerInfo;
+import org.geoserver.security.CatalogMode;
+import org.geoserver.security.CoverageAccessLimits;
+import org.geoserver.security.DataAccessLimits;
+import org.geoserver.security.DataAccessManager;
+import org.geoserver.security.DataAccessManagerAdapter;
+import org.geoserver.security.LayerGroupAccessLimits;
+import org.geoserver.security.ResourceAccessManager;
+import org.geoserver.security.StyleAccessLimits;
+import org.geoserver.security.VectorAccessLimits;
+import org.geoserver.security.WMSAccessLimits;
+import org.geoserver.security.WorkspaceAccessLimits;
+import org.opengis.filter.Filter;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 
-public class XACMLDataAccessManager implements DataAccessManager {
+public class XACMLResourceAccessManager implements ResourceAccessManager, DataAccessManager {
 
     private CatalogMode mode;
 
-    private Object modeLock = new Object();
+    private final Object modeLock = new Object();
 
-    private Logger Log;
+    private final DataAccessManagerAdapter adapter;
 
-    private static Map<String, CatalogMode> CatalogModeMap;
+    private static final Logger Log =
+            Logger.getLogger(XACMLResourceAccessManager.class.getName());
+
+    private static final Map<String, CatalogMode> CatalogModeMap;
     static {
         CatalogModeMap = new HashMap<String, CatalogMode>(3);
         CatalogModeMap.put("HIDE", CatalogMode.HIDE);
@@ -46,13 +66,12 @@ public class XACMLDataAccessManager implements DataAccessManager {
         CatalogModeMap.put("MIXED", CatalogMode.MIXED);
     }
 
-    public XACMLDataAccessManager() {
-        if (Log == null)
-            Log = Logger.getLogger(this.getClass().getName());
-
+    public XACMLResourceAccessManager() {
         GeoXACMLConfig.createDefaultRepositoryIfNotExisting();
+        this.adapter = new DataAccessManagerAdapter(this);
     }
 
+    @Override
     public boolean canAccess(Authentication user, WorkspaceInfo workspace, AccessMode mode) {
         GeoXACMLConfig.getXACMLRoleAuthority().prepareRoles(user);
         List<RequestCtx> requestCtxts = buildWorkspaceRequestCtxListFromRoles(user, workspace, mode);
@@ -69,6 +88,7 @@ public class XACMLDataAccessManager implements DataAccessManager {
         return false;
     }
 
+    @Override
     public boolean canAccess(Authentication user, LayerInfo layer, AccessMode mode) {
         return canAccess(user, layer.getResource(), mode);
         // List<RequestCtx> requestCtxts = buildLayerInfoRequestCtxListFromRoles(user, layer, mode);
@@ -82,6 +102,7 @@ public class XACMLDataAccessManager implements DataAccessManager {
         // return false;
     }
 
+    @Override
     public boolean canAccess(Authentication user, ResourceInfo resource, AccessMode mode) {
         GeoXACMLConfig.getXACMLRoleAuthority().prepareRoles(user);
         List<RequestCtx> requestCtxts = buildResourceInfoRequestCtxListFromRoles(user, resource,
@@ -99,6 +120,7 @@ public class XACMLDataAccessManager implements DataAccessManager {
         return false;
     }
 
+    @Override
     public CatalogMode getMode() {
         synchronized (modeLock) {
             if (mode != null)
@@ -142,7 +164,7 @@ public class XACMLDataAccessManager implements DataAccessManager {
     }
 
     private CatalogMode useDefaultMode() {
-        Log.info("Falling back to CatalogMode " + CatalogMode.HIDE);
+        Log.log(Level.INFO, "Falling back to CatalogMode {0}", CatalogMode.HIDE);
         mode = CatalogMode.HIDE;
         return mode;
     }
@@ -183,6 +205,31 @@ public class XACMLDataAccessManager implements DataAccessManager {
         }
 
         return resultList;
+    }
+
+    @Override
+    public WorkspaceAccessLimits getAccessLimits(Authentication user, WorkspaceInfo workspace) {
+        return adapter.getAccessLimits(user, workspace);
+    }
+
+    @Override
+    public DataAccessLimits getAccessLimits(final Authentication user, final LayerInfo layer) {
+        return adapter.getAccessLimits(user, layer);
+    }
+
+    @Override
+    public DataAccessLimits getAccessLimits(Authentication user, ResourceInfo resource) {
+        return adapter.getAccessLimits(user, resource);
+    }
+
+    @Override
+    public StyleAccessLimits getAccessLimits(Authentication user, StyleInfo style) {
+        return adapter.getAccessLimits(user, style);
+    }
+
+    @Override
+    public LayerGroupAccessLimits getAccessLimits(Authentication user, LayerGroupInfo layerGroup) {
+        return adapter.getAccessLimits(user, layerGroup);
     }
 
 }

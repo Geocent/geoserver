@@ -12,10 +12,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import org.springframework.security.Authentication;
-import org.springframework.security.GrantedAuthority;
-import org.springframework.security.context.SecurityContextHolder;
-import org.springframework.security.userdetails.UserDetails;
 import org.geotools.xacml.geoxacml.attr.GML3Support;
 
 import com.sun.xacml.Indenter;
@@ -29,6 +25,10 @@ import com.vividsolutions.jts.geom.MultiPoint;
 import com.vividsolutions.jts.geom.MultiPolygon;
 import com.vividsolutions.jts.geom.Point;
 import com.vividsolutions.jts.geom.Polygon;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 
 /**
  * Some utility methods
@@ -134,7 +134,7 @@ public class XACMLUtil {
         for (GrantedAuthority ga : auth.getAuthorities()) {
             buff.append(ga.getAuthority()).append(",");
         }
-        if (auth.getAuthorities().length > 0)
+        if (auth.getAuthorities().size() > 0)
             buff.setLength(buff.length() - 1);
         buff.append(" ] ");
         return buff.toString();

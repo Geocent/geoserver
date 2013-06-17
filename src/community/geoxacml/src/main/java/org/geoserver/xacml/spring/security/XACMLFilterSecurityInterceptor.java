@@ -5,8 +5,9 @@
 
 package org.geoserver.xacml.spring.security;
 
-import org.springframework.security.intercept.ObjectDefinitionSource;
-import org.springframework.security.intercept.web.FilterSecurityInterceptor;
+import org.springframework.security.access.SecurityMetadataSource;
+import org.springframework.security.web.access.intercept.FilterSecurityInterceptor;
+
 
 /**
  * Url based authorization
@@ -18,8 +19,8 @@ import org.springframework.security.intercept.web.FilterSecurityInterceptor;
 public class XACMLFilterSecurityInterceptor extends FilterSecurityInterceptor {
 
     @Override
-    public ObjectDefinitionSource obtainObjectDefinitionSource() {
-        return XACMLFilterDefinitionSource.Singleton;
+    public SecurityMetadataSource obtainSecurityMetadataSource() {
+        return XACMLFilterSecurityMetadataSource.Singleton;
     }
 
 }

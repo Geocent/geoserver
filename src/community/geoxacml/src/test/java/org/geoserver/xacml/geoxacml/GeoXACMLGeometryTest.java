@@ -9,11 +9,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import org.springframework.security.Authentication;
-import org.springframework.security.GrantedAuthority;
-import org.springframework.security.GrantedAuthorityImpl;
-import org.springframework.security.context.SecurityContextHolder;
-import org.springframework.security.providers.TestingAuthenticationToken;
 import org.easymock.classextension.EasyMock;
 import org.geoserver.catalog.NamespaceInfo;
 import org.geoserver.catalog.ResourceInfo;
@@ -38,6 +33,13 @@ import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.LinearRing;
 import com.vividsolutions.jts.geom.Polygon;
+import java.util.ArrayList;
+import java.util.List;
+import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 /**
  * Testing the following situations
@@ -176,8 +178,12 @@ public class GeoXACMLGeometryTest extends GeoServerTestSupport {
 
     public void testRoleAttributes() {
 
+        List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
+        authorities.add(new SimpleGrantedAuthority("READER"));
+
         UserDetailsImpl readerDetails = new UserDetailsImpl("reader", "pwreader",
-                new GrantedAuthority[] { new GrantedAuthorityImpl("READER") });
+                authorities);
+        
         readerDetails.setPersNr(4711);
         GeometryFactory fac = new GeometryFactory();
         LinearRing r = fac.createLinearRing(new Coordinate[] { new Coordinate(11, 11),
@@ -190,13 +196,13 @@ public class GeoXACMLGeometryTest extends GeoServerTestSupport {
         GeoXACMLConfig.getXACMLRoleAuthority().transformUserDetails(readerDetails);
 
         Authentication reader = new TestingAuthenticationToken(readerDetails, "pwreader",
-                readerDetails.getAuthorities());
+                (List<GrantedAuthority>) readerDetails.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(reader);
         // ///////
         GeoXACMLConfig.getXACMLRoleAuthority().prepareRoles(reader);
 
         // //////
-        XACMLRole readerRole = (XACMLRole) reader.getAuthorities()[0];
+        XACMLRole readerRole = (XACMLRole) reader.getAuthorities().toArray()[0];
 
         RequestCtx request = GeoXACMLConfig.getRequestCtxBuilderFactory()
                 .getResourceInfoRequestCtxBuilder(readerRole, europe, AccessMode.READ)

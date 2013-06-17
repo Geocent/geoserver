@@ -9,7 +9,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.geoserver.security.AccessMode;
-import org.geoserver.security.DataAccessManager.CatalogMode;
 import org.geoserver.xacml.geoxacml.XACMLConstants;
 import org.geoserver.xacml.role.XACMLRole;
 
@@ -17,6 +16,7 @@ import com.sun.xacml.attr.StringAttribute;
 import com.sun.xacml.ctx.Attribute;
 import com.sun.xacml.ctx.RequestCtx;
 import com.sun.xacml.ctx.Subject;
+import org.geoserver.security.CatalogMode;
 
 /**
  * Builds a request for testing access of geoserver to the catalog (always Permit) The idea here is

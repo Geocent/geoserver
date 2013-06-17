@@ -5,16 +5,19 @@
 
 package org.geoserver.xacml.geoxacml;
 
-import org.springframework.security.providers.TestingAuthenticationToken;
+import java.util.Arrays;
 import org.geoserver.security.DataAccessManager;
-import org.geoserver.security.DefaultDataAccessManagerAuthTest;
+import org.geoserver.security.ResourceAccessManager;
+import org.geoserver.security.impl.DefaultDataAccessManagerAuthTest;
 import org.geoserver.xacml.role.XACMLRole;
-import org.geoserver.xacml.security.XACMLDataAccessManager;
+import org.geoserver.xacml.security.XACMLResourceAccessManager;
+import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
 
 public class XACMLDefaultDataAccessManagerAuthTest extends DefaultDataAccessManagerAuthTest {
 
     @Override
-    protected DataAccessManager buildManager(String propertyFile) throws Exception {
+    protected ResourceAccessManager buildManager (String propertyFile) throws Exception {
 
         if ("wideOpen.properties".equals(propertyFile)) {
             GeoXACMLConfig.setPolicyRepsoitoryBaseDir("src/test/resources/wideOpen/");
@@ -39,7 +42,37 @@ public class XACMLDefaultDataAccessManagerAuthTest extends DefaultDataAccessMana
         }
 
         GeoXACMLConfig.reset();
-        return new XACMLDataAccessManager();
+        return new XACMLResourceAccessManager();
+
+    }
+
+    @Override
+    protected DataAccessManager buildLegacyAccessManager(String propertyFile) throws Exception {
+
+        if ("wideOpen.properties".equals(propertyFile)) {
+            GeoXACMLConfig.setPolicyRepsoitoryBaseDir("src/test/resources/wideOpen/");
+        }
+        if ("publicRead.properties".equals(propertyFile)) {
+            GeoXACMLConfig.setPolicyRepsoitoryBaseDir("src/test/resources/publicRead/");
+        }
+        if ("lockedDownHide.properties".equals(propertyFile)) {
+            GeoXACMLConfig.setPolicyRepsoitoryBaseDir("src/test/resources/lockedDownHide/");
+        }
+        if ("lockedDownMixed.properties".equals(propertyFile)) {
+            GeoXACMLConfig.setPolicyRepsoitoryBaseDir("src/test/resources/lockedDownMixed/");
+        }
+        if ("lockedDownChallenge.properties".equals(propertyFile)) {
+            GeoXACMLConfig.setPolicyRepsoitoryBaseDir("src/test/resources/lockedDownChallenge/");
+        }
+        if ("lockedDown.properties".equals(propertyFile)) {
+            GeoXACMLConfig.setPolicyRepsoitoryBaseDir("src/test/resources/lockedDown/");
+        }
+        if ("complex.properties".equals(propertyFile)) {
+            GeoXACMLConfig.setPolicyRepsoitoryBaseDir("src/test/resources/complex/");
+        }
+
+        GeoXACMLConfig.reset();
+        return new XACMLResourceAccessManager();
 
     }
 
@@ -49,19 +82,24 @@ public class XACMLDefaultDataAccessManagerAuthTest extends DefaultDataAccessMana
     }
 
     @Override
-    protected void setUp() throws Exception {
+    public void setUp() throws Exception {
         super.setUp();
 
-        rwUser = new TestingAuthenticationToken("rw", "supersecret", new XACMLRole[] {
-                new XACMLRole("READER"), new XACMLRole("WRITER") });
+        rwUser = new TestingAuthenticationToken("rw",
+                "supersecret", Arrays.asList(new GrantedAuthority[] {
+                new XACMLRole("READER"), new XACMLRole("WRITER") }));
+
         roUser = new TestingAuthenticationToken("ro", "supersecret",
-                new XACMLRole[] { new XACMLRole("READER") });
+                Arrays.asList(new GrantedAuthority[] { new XACMLRole("READER") }));
+
         anonymous = new TestingAuthenticationToken("anonymous", "",
-                new XACMLRole[] { new XACMLRole(XACMLConstants.AnonymousRole) });
+                Arrays.asList(new GrantedAuthority[] { new XACMLRole(XACMLConstants.AnonymousRole) }));
+
         milUser = new TestingAuthenticationToken("military", "supersecret",
-                new XACMLRole[] { new XACMLRole("MILITARY") });
+                Arrays.asList(new GrantedAuthority[] { new XACMLRole("MILITARY") }));
+
         root = new TestingAuthenticationToken("admin", "geoserver",
-                new XACMLRole[] { new XACMLRole(XACMLConstants.AdminRole) });
+                Arrays.asList(new GrantedAuthority[] { new XACMLRole(XACMLConstants.AdminRole) }));
 
     }
 }

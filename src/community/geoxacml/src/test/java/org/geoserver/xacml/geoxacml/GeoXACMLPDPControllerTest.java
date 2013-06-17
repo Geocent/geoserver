@@ -6,7 +6,6 @@
 package org.geoserver.xacml.geoxacml;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -15,13 +14,6 @@ import java.util.List;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import org.springframework.security.Authentication;
-import org.springframework.security.GrantedAuthority;
-import org.springframework.security.context.SecurityContextHolder;
-import org.springframework.security.providers.AuthenticationProvider;
-import org.springframework.security.providers.ProviderManager;
-import org.springframework.security.providers.TestingAuthenticationProvider;
-import org.springframework.security.providers.TestingAuthenticationToken;
 import org.geoserver.catalog.WorkspaceInfo;
 import org.geoserver.platform.GeoServerExtensions;
 import org.geoserver.security.AccessMode;
@@ -32,6 +24,13 @@ import org.w3c.dom.Node;
 
 import com.sun.xacml.Indenter;
 import com.sun.xacml.ctx.RequestCtx;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.TestingAuthenticationProvider;
+import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 public class GeoXACMLPDPControllerTest extends GeoServerTestSupport {
 
@@ -45,16 +44,13 @@ public class GeoXACMLPDPControllerTest extends GeoServerTestSupport {
         list.add(new TestingAuthenticationProvider());
         providerManager.setProviders(list);
 
+        List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
+        authorities.add(new XACMLRole("ROLE_ADMINISTRATOR"));
         Authentication admin = new TestingAuthenticationToken("admin", "geoserver",
-                new GrantedAuthority[] { new XACMLRole("ROLE_ADMINISTRATOR") });
+                authorities);
+        admin.setAuthenticated(true);
         // Authentication anonymous = new TestingAuthenticationToken("anonymous", null, null);
         SecurityContextHolder.getContext().setAuthentication(admin);
-
-    }
-
-    public void testDirExists() throws Exception {
-        File dir = new File(testData.getDataDirectoryRoot(), DataDirPolicyFinderModlule.BASE_DIR);
-        assertTrue(dir.exists());
 
     }
 
@@ -72,8 +68,9 @@ public class GeoXACMLPDPControllerTest extends GeoServerTestSupport {
 
     public void testCatalogReload() throws Exception {
         // System.out.println(getAsString("/rest/reloadXACML.txt"));
+        String response = getAsString("/rest/reloadXACML.txt");
         assertEquals(GeoXACMLRESTRepositoryReloader.ReloadedMsg,
-                getAsString("/rest/reloadXACML.txt"));
+                response.trim());
     }
 
     private List<RequestCtx> createRequestCtxList() {

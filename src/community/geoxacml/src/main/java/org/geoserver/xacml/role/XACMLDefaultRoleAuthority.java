@@ -17,9 +17,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.springframework.security.Authentication;
-import org.springframework.security.GrantedAuthority;
-import org.springframework.security.userdetails.UserDetails;
 import org.geoserver.xacml.geoxacml.GeoXACMLConfig;
 import org.geoserver.xacml.geoxacml.XACMLConstants;
 import org.geoserver.xacml.geoxacml.XACMLUtil;
@@ -39,6 +36,10 @@ import com.sun.xacml.ctx.RequestCtx;
 import com.sun.xacml.ctx.ResponseCtx;
 import com.sun.xacml.ctx.Result;
 import com.vividsolutions.jts.geom.Geometry;
+import java.util.Collection;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 /**
  * Spring Security implementation for {@link XACMLRoleAuthority}
@@ -51,12 +52,21 @@ public class XACMLDefaultRoleAuthority implements XACMLRoleAuthority {
 
     private static InheritableThreadLocal<Set<Authentication>> AlreadyPrepared = new InheritableThreadLocal<Set<Authentication>>();
 
-    public <T extends UserDetails> void transformUserDetails(T details) {
-        for (int i = 0; i < details.getAuthorities().length; i++) {
-            details.getAuthorities()[i] = new XACMLRole(details.getAuthorities()[i].getAuthority());
+    @Override
+    public <T extends UserDetails> void transformUserDetails(T details){
+        Collection<GrantedAuthority> authorities = (Collection<GrantedAuthority>)
+                details.getAuthorities();
+        Collection<GrantedAuthority> newAuthorities = new ArrayList<GrantedAuthority>();
+
+        for (GrantedAuthority grantedAuthority : details.getAuthorities()) {
+            newAuthorities.add(new XACMLRole(grantedAuthority.getAuthority()));
         }
+
+        authorities.clear();
+        authorities.addAll(newAuthorities);
     }
 
+    @Override
     public void prepareRoles(Authentication auth) {
 
         // Trying to avoid multiple processing within one thread, result cannot change
@@ -67,7 +77,9 @@ public class XACMLDefaultRoleAuthority implements XACMLRoleAuthority {
         if (AlreadyPrepared.get().contains(auth)) {
             return; // nothing todo
         }
-        List<RequestCtx> requests = new ArrayList<RequestCtx>(auth.getAuthorities().length);
+
+        List<RequestCtx> requests = new ArrayList<RequestCtx>(auth.getAuthorities().size());
+
         String userName = null;
         if (auth.getPrincipal() instanceof UserDetails)
             userName = ((UserDetails) auth.getPrincipal()).getUsername();
@@ -83,9 +95,10 @@ public class XACMLDefaultRoleAuthority implements XACMLRoleAuthority {
         List<ResponseCtx> responses = GeoXACMLConfig.getXACMLTransport().evaluateRequestCtxList(
                 requests);
 
+        Object[] authorities = (Object[]) auth.getAuthorities().toArray();
         outer: for (int i = 0; i < responses.size(); i++) {
             ResponseCtx response = responses.get(i);
-            XACMLRole role = (XACMLRole) auth.getAuthorities()[i];
+            XACMLRole role = (XACMLRole) authorities[i];
             for (Result result : response.getResults()) {
                 if (result.getDecision() != Result.DECISION_PERMIT) {
                     role.setEnabled(false);

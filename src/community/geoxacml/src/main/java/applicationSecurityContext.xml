@@ -16,8 +16,8 @@
     </property>              
     </bean>
     
-    <!-- Inject the XACML Data access manager which replaces the default one -->
-    <bean id="xacmlDataAccessManager" class="org.geoserver.xacml.security.XACMLDataAccessManager"/>
+    <!-- Inject the XACML resource access manager which replaces the default one -->
+    <!--<bean id="xacmlResourceAccessManager" class="org.geoserver.xacml.security.XACMLResourceAccessManager"/>-->
     
     <!-- adding REST reload repository configuration -->
     <bean id="reloadXACMLRepository" class="org.geoserver.xacml.geoxacml.GeoXACMLRESTRepositoryReloader"/>
@@ -39,7 +39,7 @@
     1) Disable the bean named "filterInvocationInterceptor" in the main applicationSecurityContext.xml
     2) In the following line in applicationSecurityContext  
     
-    /rest/**=httpSessionContextIntegrationFilterWithASCFalse,basicProcessingFilter,anonymousProcessingFilter,owsExceptionTranslationFilter,restFilterInvocationInterceptor
+    /rest/**=httpSessionContextIntegrationFilterWithASCFalse,basicProcessingFilter,anonymousAuthenticationFilter,owsExceptionTranslationFilter,restFilterInvocationInterceptor
     
     replace restFilterInvocationInterceptor  with filterInvocationInterceptor    
   -->			
@@ -61,11 +61,8 @@
    <!-- Need a special implementation for creating an Authentication object for anonynmous users. 
    The purpose it to crate XACMLRole objects instead of Spring Security GrantedAuthorities, 
    disable this bean in the main applicationSecurityContext.xml  -->	
-  <bean id="anonymousProcessingFilter"
-    class="org.geoserver.xacml.spring.security.XACMLAnonymousProcessingFilter">
-    <property name="key" value="geoserver" />
-    <property name="userAttribute" value="anonymousUser,ROLE_ANONYMOUS" />
-  </bean>
+  <bean id="anonymousAuthenticationFilter"
+    class="org.geoserver.xacml.spring.security.XACMLAnonymousAuthenticationFilter" />
 	
 	
 	  
@@ -83,9 +80,7 @@
    
    <!-- Need a special implementation for the UserDetailsService to crate XACMLRole objects
    instead of Spring Security GrantedAuthorities, disable this bean in the main applicationSecurityContext.xml  -->
-  <bean id="userDetailsService" class="org.geoserver.xacml.security.XACMLGeoserverUserDao">
-    <property name="geoServer" ref="geoServer" />
-  </bean>
+  <bean id="userDetailsService" class="org.geoserver.xacml.security.XACMLGeoserverUserDao" />
   
   <!-- Possibility to inject a new RequestBuilderFactory to use an own request builder. The class must implement
   org.geoserver.xacml.request.RequestCtxBuilderFactory

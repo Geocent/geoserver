@@ -4,10 +4,11 @@
  */
 package org.geoserver.xacml.geoxacml;
 
-import org.springframework.security.GrantedAuthority;
-import org.springframework.security.userdetails.UserDetails;
 
 import com.vividsolutions.jts.geom.Geometry;
+import java.util.Collection;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 public class UserDetailsImpl implements UserDetails {
 
@@ -22,15 +23,16 @@ public class UserDetailsImpl implements UserDetails {
 
     String username, password;
 
-    GrantedAuthority[] authorities = null;
+    Collection<GrantedAuthority> authorities = null;
 
-    public UserDetailsImpl(String name, String pw, GrantedAuthority[] authorities) {
+    public UserDetailsImpl(String name, String pw, Collection<GrantedAuthority> authorities) {
         username = name;
         password = pw;
         this.authorities = authorities;
     }
 
-    public GrantedAuthority[] getAuthorities() {
+    @Override
+    public Collection<GrantedAuthority> getAuthorities() {
         return authorities;
     }
 

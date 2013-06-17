@@ -5,16 +5,17 @@
 
 package org.geoserver.xacml.security;
 
-import org.springframework.security.GrantedAuthority;
-import org.springframework.security.userdetails.User;
-import org.geoserver.security.GeoserverUserDao;
+import java.util.List;
+import org.geoserver.security.impl.GeoServerUserDao;
 import org.geoserver.xacml.geoxacml.GeoXACMLConfig;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.User;
 
-public class XACMLGeoserverUserDao extends GeoserverUserDao {
+public class XACMLGeoserverUserDao extends GeoServerUserDao {
 
     @Override
     protected User createUserObject(String username, String password, boolean isEnabled,
-            GrantedAuthority[] authorities) {
+            List<GrantedAuthority> authorities) {
         User user = super.createUserObject(username, password, isEnabled, authorities);
         GeoXACMLConfig.getXACMLRoleAuthority().transformUserDetails(user);
         return user;

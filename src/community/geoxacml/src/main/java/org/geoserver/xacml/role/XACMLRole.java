@@ -8,9 +8,9 @@ package org.geoserver.xacml.role;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.springframework.security.GrantedAuthority;
 
 import com.sun.xacml.ctx.Attribute;
+import org.springframework.security.core.GrantedAuthority;
 
 /**
  * @author Christian Mueller

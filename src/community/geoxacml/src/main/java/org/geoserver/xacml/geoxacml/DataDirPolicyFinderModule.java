@@ -42,7 +42,7 @@ import com.sun.xacml.support.finder.TopLevelPolicyException;
  * @author Christian Mueller
  * 
  */
-public class DataDirPolicyFinderModlule extends PolicyFinderModule {
+public class DataDirPolicyFinderModule extends PolicyFinderModule {
 
     public static String BASE_DIR = "geoxacml";
 
@@ -58,14 +58,14 @@ public class DataDirPolicyFinderModlule extends PolicyFinderModule {
 
     protected String baseDir;
 
-    private static final Logger logger = Logger.getLogger(DataDirPolicyFinderModlule.class
+    private static final Logger logger = Logger.getLogger(DataDirPolicyFinderModule.class
             .getName());
 
     /**
      * Constructor, policies are not validated against the XML schema
      * 
      */
-    public DataDirPolicyFinderModlule() {
+    public DataDirPolicyFinderModule() {
         this(false);
     }
 
@@ -76,7 +76,7 @@ public class DataDirPolicyFinderModlule extends PolicyFinderModule {
      *            if true, perform a XML schema validation
      * 
      */
-    public DataDirPolicyFinderModlule(boolean validate) {
+    public DataDirPolicyFinderModule(boolean validate) {
         this.validate = validate;
         this.policiesByReference = new PolicyCollection();
         this.policiesByRequest = new PolicyCollection();

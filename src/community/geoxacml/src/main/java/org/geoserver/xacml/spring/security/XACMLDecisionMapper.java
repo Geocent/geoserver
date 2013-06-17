@@ -5,9 +5,8 @@
 
 package org.geoserver.xacml.spring.security;
 
-import org.springframework.security.vote.AccessDecisionVoter;
-
 import com.sun.xacml.ctx.Result;
+import org.springframework.security.access.AccessDecisionVoter;
 
 /**
  * 

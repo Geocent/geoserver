@@ -37,6 +37,7 @@
           <descriptor>release/ext-printing.xml</descriptor>
           <descriptor>release/ext-python.xml</descriptor>
           <descriptor>release/ext-groovy.xml</descriptor>
+          <descriptor>release/ext-geoxacml.xml</descriptor>
           <descriptor>release/ext-javascript.xml</descriptor>
           <descriptor>release/ext-spatialite.xml</descriptor>
           <descriptor>release/ext-jdbcconfig.xml</descriptor>
@@ -155,6 +156,12 @@
         <module>script</module>
         <module>wcs2_0</module>
         <module>libjpeg-turbo</module>
+      </modules>
+    </profile>
+    <profile>      
+      <id>geoxacml</id>
+      <modules>
+        <module>geoxacml</module>
       </modules>
     </profile>
     <profile>

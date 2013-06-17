@@ -12,12 +12,6 @@ import javax.servlet.http.HttpServletRequest;
 
 import junit.framework.TestCase;
 
-import org.springframework.security.Authentication;
-import org.springframework.security.ConfigAttribute;
-import org.springframework.security.ConfigAttributeDefinition;
-import org.springframework.security.intercept.web.FilterInvocation;
-import org.springframework.security.providers.TestingAuthenticationToken;
-import org.springframework.security.vote.AccessDecisionVoter;
 import org.easymock.EasyMock;
 import org.geoserver.xacml.role.XACMLRole;
 import org.geoserver.xacml.spring.security.XACMLFilterDecisionVoter;
@@ -25,6 +19,15 @@ import org.geoserver.xacml.spring.security.XACMLFilterDecisionVoter;
 import com.sun.xacml.attr.StringAttribute;
 import com.sun.xacml.ctx.Attribute;
 import com.sun.xacml.ctx.RequestCtx;
+import java.util.ArrayList;
+import java.util.List;
+import org.springframework.security.access.AccessDecisionVoter;
+import org.springframework.security.access.ConfigAttribute;
+import org.springframework.security.access.SecurityConfig;
+import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.web.FilterInvocation;
 
 /**
  * Testing URL matching
@@ -42,12 +45,25 @@ public class XACMLURLMatchingTest extends TestCase {
         super.setUp();
         GeoXACMLConfig.setPolicyRepsoitoryBaseDir("src/test/resources/urltest/");
         GeoXACMLConfig.reset();
-        anonymous = new TestingAuthenticationToken("anonymous", "passwd",
-                new XACMLRole[] { new XACMLRole(XACMLConstants.AnonymousRole) });
-        admin = new TestingAuthenticationToken("admin", "passwd", new XACMLRole[] { new XACMLRole(
-                XACMLConstants.AdminRole) });
-        authenticated = new TestingAuthenticationToken("xy", "passwd",
-                new XACMLRole[] { new XACMLRole(XACMLConstants.Authenticated) });
+        List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
+
+        authorities.add(new XACMLRole(XACMLConstants.AnonymousRole));
+
+        anonymous = new TestingAuthenticationToken((Object)"anonymous", (Object)"passwd",
+                authorities);
+
+        authorities = new ArrayList<GrantedAuthority>();
+        authorities.add(new XACMLRole(XACMLConstants.AdminRole));
+        
+        admin = new TestingAuthenticationToken((Object)"admin", (Object)"passwd",
+                authorities);
+
+
+        authorities = new ArrayList<GrantedAuthority>();
+        authorities.add(new XACMLRole(XACMLConstants.Authenticated));
+
+        authenticated = new TestingAuthenticationToken((Object)"xy", (Object)"passwd",
+                authorities);
     }
 
     public void testGeoXACMLURL() {
@@ -88,7 +104,7 @@ public class XACMLURLMatchingTest extends TestCase {
         paramMap.put("param1", "value1");
         paramMap.put("param2", new String[] { "value2" });
         RequestCtx request = GeoXACMLConfig.getRequestCtxBuilderFactory()
-                .getURLMatchRequestCtxBuilder((XACMLRole) anonymous.getAuthorities()[0], "/rest/",
+                .getURLMatchRequestCtxBuilder((XACMLRole) anonymous.getAuthorities().toArray()[0], "/rest/",
                         "GET", paramMap,"127.0.0.1", "localhost").createRequestCtx();
 
         //System.out.println(XACMLUtil.asXMLString(request));
@@ -127,8 +143,11 @@ public class XACMLURLMatchingTest extends TestCase {
         org.easymock.classextension.EasyMock.replay(filter);
 
         XACMLFilterDecisionVoter voter = new XACMLFilterDecisionVoter();
-        return voter.vote(aut, filter, new ConfigAttributeDefinition("xacml"));
 
+        List<ConfigAttribute> configAttributes = new ArrayList<ConfigAttribute>();
+        configAttributes.add(new SecurityConfig("xacml"));
+
+        return voter.vote(aut, filter, configAttributes);
     }
 
 }

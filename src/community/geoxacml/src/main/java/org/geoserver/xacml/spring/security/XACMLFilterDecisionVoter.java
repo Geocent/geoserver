@@ -10,12 +10,6 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.springframework.security.Authentication;
-import org.springframework.security.ConfigAttribute;
-import org.springframework.security.ConfigAttributeDefinition;
-import org.springframework.security.GrantedAuthority;
-import org.springframework.security.intercept.web.FilterInvocation;
-import org.springframework.security.vote.AccessDecisionVoter;
 import org.geoserver.xacml.geoxacml.GeoXACMLConfig;
 import org.geoserver.xacml.geoxacml.XACMLUtil;
 import org.geoserver.xacml.role.XACMLRole;
@@ -23,6 +17,12 @@ import org.geoserver.xacml.role.XACMLRole;
 import com.sun.xacml.ctx.RequestCtx;
 import com.sun.xacml.ctx.ResponseCtx;
 import com.sun.xacml.ctx.Result;
+import java.util.Collection;
+import org.springframework.security.access.AccessDecisionVoter;
+import org.springframework.security.access.ConfigAttribute;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.web.FilterInvocation;
 
 /**
  * Spring Security Decision Voter using XACML policies
@@ -30,17 +30,20 @@ import com.sun.xacml.ctx.Result;
  * @author Christian Mueller
  * 
  */
-public class XACMLFilterDecisionVoter implements AccessDecisionVoter {
+public class XACMLFilterDecisionVoter<S> implements AccessDecisionVoter<S> {
 
+    @Override
     public boolean supports(ConfigAttribute attr) {
         return true;
     }
 
-    public boolean supports(Class aClass) {
+    @Override
+    public boolean supports(Class<?> aClass) {
         return true;
     }
 
-    public int vote(Authentication auth, Object request, ConfigAttributeDefinition arg2) {
+    @Override
+    public int vote(Authentication auth, S request, Collection<ConfigAttribute> arg2) {
         
         HttpServletRequest httpRequest = ((FilterInvocation) request).getHttpRequest();
         String urlPath = httpRequest.getServletPath().toLowerCase();

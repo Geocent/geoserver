@@ -92,7 +92,7 @@ public class GeoXACMLConfig {
             // initialize the geotools part
             GeoXACML.initialize();
 
-            DataDirPolicyFinderModlule policyModule = new DataDirPolicyFinderModlule();
+            DataDirPolicyFinderModule policyModule = new DataDirPolicyFinderModule();
             if (repositoryBaseDir != null)
                 policyModule.setBaseDir(repositoryBaseDir);
 
@@ -180,11 +180,11 @@ public class GeoXACMLConfig {
             return;
         }
 
-        createDirectoryIfNotExisting(new File(geoServerDataDir, DataDirPolicyFinderModlule.BASE_DIR));
-        String byRequestDir = DataDirPolicyFinderModlule.BASE_DIR + "/"
-                + DataDirPolicyFinderModlule.BY_REQUEST_DIR;
-        String byReferenceDir = DataDirPolicyFinderModlule.BASE_DIR + "/"
-                + DataDirPolicyFinderModlule.BY_REFERENCE_DIR;
+        createDirectoryIfNotExisting(new File(geoServerDataDir, DataDirPolicyFinderModule.BASE_DIR));
+        String byRequestDir = DataDirPolicyFinderModule.BASE_DIR + "/"
+                + DataDirPolicyFinderModule.BY_REQUEST_DIR;
+        String byReferenceDir = DataDirPolicyFinderModule.BASE_DIR + "/"
+                + DataDirPolicyFinderModule.BY_REFERENCE_DIR;
         String commonDir = byReferenceDir + "/common";
         String anonymousDir = byReferenceDir + "/anonymous";
         String authenticatedDir = byReferenceDir + "/authenticated";
