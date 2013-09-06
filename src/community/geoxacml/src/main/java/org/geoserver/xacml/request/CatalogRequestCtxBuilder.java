@@ -5,17 +5,11 @@
 
 package org.geoserver.xacml.request;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import org.geoserver.security.AccessMode;
+import org.geoserver.security.CatalogMode;
 import org.geoserver.xacml.geoxacml.XACMLConstants;
 import org.geoserver.xacml.role.XACMLRole;
-
-import com.sun.xacml.ctx.Attribute;
-import com.sun.xacml.ctx.RequestCtx;
-import com.sun.xacml.ctx.Subject;
-import org.geoserver.security.CatalogMode;
+import org.herasaf.xacml.core.context.impl.*;
 
 /**
  * Builds a request for testing access of geoserver to the catalog (always Permit) The idea here is
@@ -32,21 +26,23 @@ public class CatalogRequestCtxBuilder extends RequestCtxBuilder {
     }
 
     @Override
-    public RequestCtx createRequestCtx() {
+    public RequestType createRequest() {
 
-        Set<Subject> subjects = new HashSet<Subject>(1);
-        addRole(subjects);
+        SubjectType subject = new SubjectType();
+        addRole(subject);
 
-        Set<Attribute> resources = new HashSet<Attribute>(1);
-        addGeoserverResource(resources);
-        addResource(resources, XACMLConstants.CatalogResourceURI, XACMLConstants.CatalogResouceName);
+        ResourceType resource = new ResourceType();
+        addGeoserverResource(resource);
+        addResource(resource, XACMLConstants.CatalogResourceURI, XACMLConstants.CatalogResouceName);
 
-        Set<Attribute> actions = new HashSet<Attribute>(1);
-        addAction(actions);
+        ActionType action = new ActionType();
+        addAction(action);
 
-        Set<Attribute> environment = new HashSet<Attribute>(1);
-
-        RequestCtx ctx = new RequestCtx(subjects, resources, actions, environment);
+        RequestType ctx = new RequestType();
+        ctx.getSubjects().add(subject);
+        ctx.getResources().add(resource);
+        ctx.setAction(action);
+        ctx.setEnvironment(new EnvironmentType());
         return ctx;
 
     }

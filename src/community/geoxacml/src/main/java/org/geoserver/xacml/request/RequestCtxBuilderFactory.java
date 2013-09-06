@@ -5,17 +5,16 @@
 
 package org.geoserver.xacml.request;
 
-import java.util.Map;
-
 import org.geoserver.catalog.ResourceInfo;
 import org.geoserver.catalog.WorkspaceInfo;
 import org.geoserver.security.AccessMode;
-import org.geoserver.xacml.geoxacml.GeoXACMLConfig;
 import org.geoserver.xacml.role.XACMLRole;
+
+import java.util.Map;
 
 /**
  * Interface for RequestCtxBuilders User can do an own implementation and configure in
- * applicationContext.xml The Factory is instantiated in {@link GeoXACMLConfig}
+ * applicationContext.xml
  * 
  * @author Christian Mueller
  * 

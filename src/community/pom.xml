@@ -33,6 +33,9 @@
       <configuration>
         <descriptors>
           <descriptor>release/ext-authkey.xml</descriptor>
+          <descriptor>release/ext-css.xml</descriptor>
+          <descriptor>release/ext-saml2auth.xml</descriptor>
+          <descriptor>release/ext-css.xml</descriptor>
           <descriptor>release/ext-ftp.xml</descriptor>
           <descriptor>release/ext-printing.xml</descriptor>
           <descriptor>release/ext-python.xml</descriptor>
@@ -162,7 +165,20 @@
       <id>geoxacml</id>
       <modules>
         <module>geoxacml</module>
+        <module>geoxacml-common</module>
       </modules>
+    </profile>
+    <profile>
+      <id>css</id>
+      <modules>
+        <module>css</module>
+      </modules>
+    </profile>
+    <profile>
+        <id>saml2auth</id>
+        <modules>
+            <module>saml2auth</module>
+        </modules>
     </profile>
     <profile>
       <id>gss</id>

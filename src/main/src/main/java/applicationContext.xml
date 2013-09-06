@@ -42,7 +42,11 @@
          <property name="resourceLoader" ref="resourceLoader"/>  
     </bean>
     <bean id="secureCatalog" class="org.geoserver.security.SecureCatalogImpl" depends-on="accessRulesDao,extensions">
-        <constructor-arg ref="rawCatalog" /> 
+        <constructor-arg ref="rawCatalog" />
+        <constructor-arg index="1">
+            <bean class="org.geoserver.xacml.security.XACMLResourceAccessManager">
+            </bean>
+        </constructor-arg>
     </bean>
     <bean id="advertisedCatalog" class="org.geoserver.catalog.impl.AdvertisedCatalog">
         <constructor-arg ref="secureCatalog" />
@@ -56,8 +60,8 @@
     </bean>
     
     <!-- Switch this when you want to enable the secure catalog by default -->
-    <!--alias name="secureCatalog" alias="catalog"/-->
-    <alias name="localWorkspaceCatalog" alias="catalog"/> 
+    <alias name="secureCatalog" alias="catalog"/>
+    <!--<alias name="localWorkspaceCatalog" alias="catalog"/> -->
     
     <bean id="geoServer" class="org.geoserver.config.impl.GeoServerImpl">
       <property name="catalog" ref="catalog"/>

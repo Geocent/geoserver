@@ -17,12 +17,12 @@
 
 package org.geotools.xacml.transport;
 
+import org.herasaf.xacml.core.api.PDP;
+import org.herasaf.xacml.core.context.impl.RequestType;
+import org.herasaf.xacml.core.context.impl.ResponseType;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import com.sun.xacml.PDP;
-import com.sun.xacml.ctx.RequestCtx;
-import com.sun.xacml.ctx.ResponseCtx;
 
 /**
  * Transport Object for a local PDP. Since XACML requests are independent of each other, it is
@@ -39,19 +39,19 @@ public class XACMLLocalTransport extends XACMLAbstractTransport {
      * 
      */
     public class LocalThread extends Thread {
-        private RequestCtx requestCtx = null;;
+        private RequestType requestCtx = null;;
 
-        public RequestCtx getRequestCtx() {
+        public RequestType getRequestCtx() {
             return requestCtx;
         }
 
-        private ResponseCtx responseCtx = null;
+        private ResponseType responseCtx = null;
 
-        public ResponseCtx getResponseCtx() {
+        public ResponseType getResponseCtx() {
             return responseCtx;
         }
 
-        LocalThread(RequestCtx requestCtx) {
+        LocalThread(RequestType requestCtx) {
             this.requestCtx = requestCtx;
         }
 
@@ -71,25 +71,25 @@ public class XACMLLocalTransport extends XACMLAbstractTransport {
         this.pdp = pdp;
     }
 
-    public ResponseCtx evaluateRequestCtx(RequestCtx request) {
+    public ResponseType evaluateRequestCtx(RequestType request) {
         log(request);
-        ResponseCtx response = pdp.evaluate(request);
+        ResponseType response = pdp.evaluate(request);
         log(response);
         return response;
     }
 
-    public List<ResponseCtx> evaluateRequestCtxList(List<RequestCtx> requests) {
+    public List<ResponseType> evaluateRequestCtxList(List<RequestType> requests) {
         if (multiThreaded)
             return evaluateRequestCtxListMultiThreaded(requests);
         else
             return evaluateRequestCtxListSerial(requests);
     }
 
-    private List<ResponseCtx> evaluateRequestCtxListSerial(List<RequestCtx> requests) {
-        List<ResponseCtx> resultList = new ArrayList<ResponseCtx>();
-        for (RequestCtx request : requests) {
+    private List<ResponseType> evaluateRequestCtxListSerial(List<RequestType> requests) {
+        List<ResponseType> resultList = new ArrayList<ResponseType>();
+        for (RequestType request : requests) {
             log(request);
-            ResponseCtx response = pdp.evaluate(request);
+            ResponseType response = pdp.evaluate(request);
             log(response);
             resultList.add(response);
 
@@ -97,8 +97,8 @@ public class XACMLLocalTransport extends XACMLAbstractTransport {
         return resultList;
     }
 
-    private List<ResponseCtx> evaluateRequestCtxListMultiThreaded(List<RequestCtx> requests) {
-        List<ResponseCtx> resultList = new ArrayList<ResponseCtx>(requests.size());
+    private List<ResponseType> evaluateRequestCtxListMultiThreaded(List<RequestType> requests) {
+        List<ResponseType> resultList = new ArrayList<ResponseType>(requests.size());
         List<LocalThread> threadList = new ArrayList<LocalThread>(requests.size());
 
         if (requests.size() == 1) { // no threading for only one request
@@ -106,7 +106,7 @@ public class XACMLLocalTransport extends XACMLAbstractTransport {
             return resultList;
         }
 
-        for (RequestCtx request : requests) {
+        for (RequestType request : requests) {
             LocalThread t = new LocalThread(request);
             t.start();
             threadList.add(t);

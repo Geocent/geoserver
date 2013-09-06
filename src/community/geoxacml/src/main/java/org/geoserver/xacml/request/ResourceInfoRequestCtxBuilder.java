@@ -5,17 +5,14 @@
 
 package org.geoserver.xacml.request;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import org.geoserver.catalog.ResourceInfo;
 import org.geoserver.security.AccessMode;
 import org.geoserver.xacml.geoxacml.XACMLConstants;
 import org.geoserver.xacml.role.XACMLRole;
+import org.herasaf.xacml.core.context.impl.*;
 
-import com.sun.xacml.ctx.Attribute;
-import com.sun.xacml.ctx.RequestCtx;
-import com.sun.xacml.ctx.Subject;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Builds a request for layer info access control
@@ -50,24 +47,28 @@ public class ResourceInfoRequestCtxBuilder extends RequestCtxBuilder {
     }
 
     @Override
-    public RequestCtx createRequestCtx() {
+    public RequestType createRequest() {
 
-        Set<Subject> subjects = new HashSet<Subject>(1);
-        addRole(subjects);
+        SubjectType subject = new SubjectType();
+        addRole(subject);
 
-        Set<Attribute> resources = new HashSet<Attribute>(1);
-        addGeoserverResource(resources);
-        addOWSService(resources);
-        addResource(resources, XACMLConstants.WorkspaceURI, workspaceName);
-        addResource(resources, XACMLConstants.GeoServerResouceURI, resourceName);
-        addBbox(resources);
+        ResourceType resource = new ResourceType();
+        addGeoserverResource(resource);
+        addOWSService(resource);
+        addResource(resource, XACMLConstants.WorkspaceURI, workspaceName);
+        addResource(resource, XACMLConstants.GeoServerResouceURI, resourceName);
+        addBbox(resource);
 
-        Set<Attribute> actions = new HashSet<Attribute>(1);
-        addAction(actions);
+        ActionType action = new ActionType();
+        addAction(action);
 
-        Set<Attribute> environment = new HashSet<Attribute>(1);
+        Set<AttributeType> environment = new HashSet<AttributeType>(1);
 
-        RequestCtx ctx = new RequestCtx(subjects, resources, actions, environment);
+        RequestType ctx = new RequestType();
+        ctx.getSubjects().add(subject);
+        ctx.getResources().add(resource);
+        ctx.setAction(action);
+        ctx.setEnvironment(new EnvironmentType());
         return ctx;
     }
 

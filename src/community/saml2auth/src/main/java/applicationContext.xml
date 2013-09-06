@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright (c) 2001 - 2013 OpenPlans - www.openplans.org. All rights reserved. 
+    This code is licensed under the GPL 2.0 license, available at the root application 
+    directory. -->
+<!-- <!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd"> -->
+
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+          http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/WEB-INF/view/" />
+        <property name="suffix" value=".jsp" />
+    </bean>
+
+    <bean id="saml2AuthPanelInfo" class="org.geoserver.security.web.auth.Saml2AuthFilterPanelInfo">
+        <property name="id" value="security.saml2AuthFilter" />
+        <property name="shortTitleKey" value="Saml2AuthFilterPanel.short" />
+        <property name="titleKey" value="Saml2AuthFilterPanel.title" />
+        <property name="descriptionKey" value="Saml2AuthFilterPanel.description" />
+    </bean>
+    
+    <bean id="saml2RoleServicePanelInfo" class="org.geoserver.security.web.role.Saml2RoleServicePanelInfo">
+        <property name="id" value="security.saml2RoleService" />
+        <property name="shortTitleKey" value="Saml2RoleServicePanel.short" />
+        <property name="titleKey" value="Saml2RoleServicePanel.title" />
+        <property name="descriptionKey" value="Saml2RoleServicePanel.description" />
+    </bean>
+
+</beans>

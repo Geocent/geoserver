@@ -4,42 +4,30 @@
  */
 package org.geoserver.xacml.role;
 
+import com.vividsolutions.jts.geom.Geometry;
+import org.geoserver.security.impl.GeoServerUser;
+import org.geoserver.xacml.geoxacml.XACMLConstants;
+import org.geoserver.xacml.request.RequestCtxBuilderFactory;
+import org.geotools.xacml.geoxacml.attr.GeometryDataTypeAttribute;
+import org.geotools.xacml.transport.XACMLTransport;
+import org.herasaf.xacml.core.context.impl.*;
+import org.herasaf.xacml.core.dataTypeAttribute.impl.*;
+import org.herasaf.xacml.core.policy.impl.AttributeAssignmentType;
+import org.herasaf.xacml.core.policy.impl.AttributeSelectorType;
+import org.herasaf.xacml.core.policy.impl.ObligationType;
+import org.herasaf.xacml.core.policy.impl.ObligationsType;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.io.Serializable;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import org.geoserver.xacml.geoxacml.GeoXACMLConfig;
-import org.geoserver.xacml.geoxacml.XACMLConstants;
-import org.geoserver.xacml.geoxacml.XACMLUtil;
-import org.geotools.xacml.geoxacml.attr.GMLVersion;
-import org.geotools.xacml.geoxacml.attr.GeometryAttribute;
-
-import com.sun.xacml.Obligation;
-import com.sun.xacml.attr.AnyURIAttribute;
-import com.sun.xacml.attr.AttributeValue;
-import com.sun.xacml.attr.BooleanAttribute;
-import com.sun.xacml.attr.DateTimeAttribute;
-import com.sun.xacml.attr.DoubleAttribute;
-import com.sun.xacml.attr.IntegerAttribute;
-import com.sun.xacml.attr.StringAttribute;
-import com.sun.xacml.ctx.Attribute;
-import com.sun.xacml.ctx.RequestCtx;
-import com.sun.xacml.ctx.ResponseCtx;
-import com.sun.xacml.ctx.Result;
-import com.vividsolutions.jts.geom.Geometry;
-import java.util.Collection;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
+import java.util.*;
 
 /**
  * Spring Security implementation for {@link XACMLRoleAuthority}
@@ -48,22 +36,28 @@ import org.springframework.security.core.userdetails.UserDetails;
  * @author Christian Mueller
  * 
  */
-public class XACMLDefaultRoleAuthority implements XACMLRoleAuthority {
+public class XACMLDefaultRoleAuthority implements XACMLRoleAuthority<GeoServerUser> {
 
     private static InheritableThreadLocal<Set<Authentication>> AlreadyPrepared = new InheritableThreadLocal<Set<Authentication>>();
 
+    private RequestCtxBuilderFactory requestCtxBuilderFactory;
+    private XACMLTransport transport;
+
     @Override
-    public <T extends UserDetails> void transformUserDetails(T details){
+    public void transformUserDetails(GeoServerUser details){
         Collection<GrantedAuthority> authorities = (Collection<GrantedAuthority>)
                 details.getAuthorities();
-        Collection<GrantedAuthority> newAuthorities = new ArrayList<GrantedAuthority>();
+        Set<GrantedAuthority> newAuthorities = new HashSet();
 
         for (GrantedAuthority grantedAuthority : details.getAuthorities()) {
-            newAuthorities.add(new XACMLRole(grantedAuthority.getAuthority()));
+            XACMLRole role = new XACMLRole(grantedAuthority.getAuthority());
+            //TODO: Allow list of disabled roles?
+            role.setEnabled(true);
+            newAuthorities.add(role);
         }
 
-        authorities.clear();
-        authorities.addAll(newAuthorities);
+        details.setAuthorities(newAuthorities);
+
     }
 
     @Override
@@ -78,7 +72,7 @@ public class XACMLDefaultRoleAuthority implements XACMLRoleAuthority {
             return; // nothing todo
         }
 
-        List<RequestCtx> requests = new ArrayList<RequestCtx>(auth.getAuthorities().size());
+        List<RequestType> requests = new ArrayList<RequestType>(auth.getAuthorities().size());
 
         String userName = null;
         if (auth.getPrincipal() instanceof UserDetails)
@@ -88,19 +82,18 @@ public class XACMLDefaultRoleAuthority implements XACMLRoleAuthority {
         }
 
         for (GrantedAuthority ga : auth.getAuthorities()) {
-            requests.add(GeoXACMLConfig.getRequestCtxBuilderFactory()
-                    .getXACMLRoleRequestCtxBuilder((XACMLRole) ga, userName).createRequestCtx());
+            requests.add(requestCtxBuilderFactory.getXACMLRoleRequestCtxBuilder((XACMLRole) ga, userName).createRequest());
         }
 
-        List<ResponseCtx> responses = GeoXACMLConfig.getXACMLTransport().evaluateRequestCtxList(
+        List<ResponseType> responses = transport.evaluateRequestCtxList(
                 requests);
 
         Object[] authorities = (Object[]) auth.getAuthorities().toArray();
         outer: for (int i = 0; i < responses.size(); i++) {
-            ResponseCtx response = responses.get(i);
+            ResponseType response = responses.get(i);
             XACMLRole role = (XACMLRole) authorities[i];
-            for (Result result : response.getResults()) {
-                if (result.getDecision() != Result.DECISION_PERMIT) {
+            for (ResultType result : response.getResults()) {
+                if (result.getDecision() != DecisionType.PERMIT) {
                     role.setEnabled(false);
                     continue outer;
                 }
@@ -112,7 +105,7 @@ public class XACMLDefaultRoleAuthority implements XACMLRoleAuthority {
         AlreadyPrepared.get().add(auth); // avoid further processing within one thread
     }
 
-    private void setUserProperties(Authentication auth, Result result, XACMLRole role) {
+    private void setUserProperties(Authentication auth, ResultType result, XACMLRole role) {
 
         if (role.isRoleAttributesProcessed())
             return; // already done
@@ -122,23 +115,35 @@ public class XACMLDefaultRoleAuthority implements XACMLRoleAuthority {
             return;
         }
 
-        for (Obligation obligation : result.getObligations()) {
-            if (XACMLConstants.UserPropertyObligationId.equals(obligation.getId().toString()))
-                setRoleParamsFromUserDetails(auth, obligation, role);
-            if (XACMLConstants.RoleConstantObligationId.equals(obligation.getId().toString()))
-                setRoleParamsFromConstants(obligation, role);
+        ObligationsType obligations = result.getObligations();
+        if(obligations != null){
+            for (ObligationType obligation : obligations.getObligations()){
+                if (XACMLConstants.UserPropertyObligationId.equals(obligation.getObligationId()))
+                    setRoleParamsFromUserDetails(auth, obligation, role);
+                if (XACMLConstants.RoleConstantObligationId.equals(obligation.getObligationId()))
+                    setRoleParamsFromConstants(obligation, role);
 
+            }
         }
         role.setRoleAttributesProcessed(true);
     }
 
-    private void setRoleParamsFromConstants(Obligation obligation, XACMLRole role) {
-        for (Attribute attr : obligation.getAssignments()) {
-            role.getAttributes().add(attr);
+    private void setRoleParamsFromConstants(ObligationType obligation, XACMLRole role) {
+        for (AttributeAssignmentType assignment : obligation.getAttributeAssignments()) {
+            for(Object o : assignment.getContent()){
+                if( o instanceof AttributeType){
+                    role.getAttributes().add((AttributeType)o);
+                }
+
+                if(o instanceof AttributeSelectorType){
+                    //The 'handle' method of AttributeSelectorType isn't implemented
+                    //TODO: Write handler logic here?
+                }
+            }
         }
     }
 
-    private void setRoleParamsFromUserDetails(Authentication auth, Obligation obligation,
+    private void setRoleParamsFromUserDetails(Authentication auth, ObligationType obligation,
             XACMLRole role) {
 
         BeanInfo bi = null;
@@ -148,68 +153,94 @@ public class XACMLDefaultRoleAuthority implements XACMLRoleAuthority {
             throw new RuntimeException(e);
         }
 
-        for (Attribute attr : obligation.getAssignments()) {
-            String propertyName = ((StringAttribute) attr.getValue()).getValue();
-            for (PropertyDescriptor pd : bi.getPropertyDescriptors()) {
-                if (pd.getName().equals(propertyName)) {
-                    Serializable value = null;
-                    try {
-                        Object tmp = pd.getReadMethod().invoke(auth.getPrincipal(), new Object[0]);
-                        if (tmp == null)
-                            continue;
-                        if (tmp instanceof Serializable == false) {
-                            throw new RuntimeException("Role params must be serializable, "
-                                    + tmp.getClass() + " is not");
+        for (AttributeAssignmentType assignment : obligation.getAttributeAssignments()) {
+            //TODO: Obligations are going to be no bueno here
+            for(Object o: assignment.getContent()){
+                AttributeType attr = null;
+                if(o instanceof AttributeType){
+                    attr = (AttributeType)o;
+                }
+
+                //TODO: Fix to use AttributeSelector logic
+
+                if(attr != null){
+                    String propertyName = attr.getAttributeValues().get(0).toString();
+                    for (PropertyDescriptor pd : bi.getPropertyDescriptors()) {
+                        if (pd.getName().equals(propertyName)) {
+                            Serializable value = null;
+                            try {
+                                Object tmp = pd.getReadMethod().invoke(auth.getPrincipal(), new Object[0]);
+                                if (tmp == null)
+                                    continue;
+                                if (tmp instanceof Serializable == false) {
+                                    throw new RuntimeException("Role params must be serializable, "
+                                            + tmp.getClass() + " is not");
+                                }
+                                value = (Serializable) tmp;
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
+                            // special check for geometries
+                            if (value instanceof Geometry) {
+                                if (((Geometry) value).getUserData() == null)
+                                    throw new RuntimeException("Property: " + propertyName
+                                            + " : Geometry must have srs name as userdata");
+                            }
+                            AttributeType xacmlAttr = createAttributeValueFromObject(value, attr.getAttributeId());
+                            role.getAttributes().add(xacmlAttr);
                         }
-                        value = (Serializable) tmp;
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
                     }
-                    // special check for geometries
-                    if (value instanceof Geometry) {
-                        if (((Geometry) value).getUserData() == null)
-                            throw new RuntimeException("Property: " + propertyName
-                                    + " : Geometry must have srs name as userdata");
-                    }
-                    AttributeValue attrValue = createAttributeValueFromObject(value);
-                    Attribute xacmlAttr = new Attribute(attr.getId(), null, null, attrValue);
-                    role.getAttributes().add(xacmlAttr);
                 }
             }
         }
 
     }
 
-    protected AttributeValue createAttributeValueFromObject(Serializable object) {
-        AttributeValue retVal = null;
+    protected AttributeType createAttributeValueFromObject(Serializable object, String attributeId) {
+        AttributeType attr = new AttributeType();
+        attr.setAttributeId(attributeId);
+        AttributeValueType value = new AttributeValueType();
+        value.getContent().add(object);
+        attr.getAttributeValues().add(value);
 
         if (object instanceof String)
-            retVal = new StringAttribute((String) object);
+            attr.setDataType(new StringDataTypeAttribute());
         if (object instanceof URI)
-            retVal = new AnyURIAttribute((URI) object);
+            attr.setDataType(new AnyURIDataTypeAttribute());
         if (object instanceof Boolean)
-            retVal = ((Boolean) object) ? BooleanAttribute.getTrueInstance() : BooleanAttribute
-                    .getFalseInstance();
+            attr.setDataType(new BooleanDataTypeAttribute());
         if (object instanceof Double)
-            retVal = new DoubleAttribute((Double) object);
+            attr.setDataType(new DoubleDataTypeAttribute());
         if (object instanceof Float)
-            retVal = new DoubleAttribute((Float) object);
+            attr.setDataType(new DoubleDataTypeAttribute());
         if (object instanceof Integer)
-            retVal = new IntegerAttribute((Integer) object);
+            attr.setDataType(new IntegerDataTypeAttribute());
         if (object instanceof Date)
-            retVal = new DateTimeAttribute((Date) object);
+            attr.setDataType(new DateDataTypeAttribute());
         if (object instanceof Geometry) {
-            Geometry g = (Geometry) object;
-            String gmlType = XACMLUtil.getGMLTypeFor(g);
-            try {
-                retVal = new GeometryAttribute(g, g.getUserData().toString(), null,
-                        GMLVersion.Version3, gmlType);
-            } catch (URISyntaxException e) {
-                throw new RuntimeException(e);
-            }
+            attr.setDataType(new GeometryDataTypeAttribute());
         }
 
-        return retVal;
+        return attr;
     }
+
+    public RequestCtxBuilderFactory getRequestCtxBuilderFactory() {
+        return requestCtxBuilderFactory;
+    }
+
+    @Autowired
+    public void setRequestCtxBuilderFactory(RequestCtxBuilderFactory requestCtxBuilderFactory) {
+        this.requestCtxBuilderFactory = requestCtxBuilderFactory;
+    }
+
+    public XACMLTransport getTransport() {
+        return transport;
+    }
+
+    @Autowired
+    public void setTransport(XACMLTransport transport) {
+        this.transport = transport;
+    }
+
 
 }

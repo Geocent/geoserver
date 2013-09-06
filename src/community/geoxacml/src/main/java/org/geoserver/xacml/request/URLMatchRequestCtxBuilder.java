@@ -5,26 +5,16 @@
 
 package org.geoserver.xacml.request;
 
-import java.net.Inet4Address;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.Map.Entry;
-
 import org.geoserver.xacml.geoxacml.XACMLConstants;
 import org.geoserver.xacml.role.XACMLRole;
+import org.herasaf.xacml.core.context.impl.*;
+import org.herasaf.xacml.core.dataTypeAttribute.impl.DnsNameDataTypeAttribute;
+import org.herasaf.xacml.core.dataTypeAttribute.impl.IpAddressDataTypeAttribute;
 
-import com.sun.xacml.attr.AttributeValue;
-import com.sun.xacml.attr.DNSNameAttribute;
-import com.sun.xacml.attr.IPv4AddressAttribute;
-import com.sun.xacml.attr.IPv6AddressAttribute;
-import com.sun.xacml.ctx.Attribute;
-import com.sun.xacml.ctx.RequestCtx;
-import com.sun.xacml.ctx.Subject;
+import java.net.*;
+import java.util.Map;
+import java.util.Map.Entry;
+
 
 /**
  * Builds a request for URL Matching against regular expressions Http parameters are encoded as
@@ -53,14 +43,17 @@ public class URLMatchRequestCtxBuilder extends RequestCtxBuilder {
     }
 
     @Override
-    public RequestCtx createRequestCtx() {
+    public RequestType createRequest() {
 
-        Set<Subject> subjects = new HashSet<Subject>(1);
-        addRole(subjects);
+        SubjectType subject = new SubjectType();
+        addRole(subject);
 
-        Set<Attribute> resources = new HashSet<Attribute>(1);
-        addGeoserverResource(resources);
-        addResource(resources, XACMLConstants.URlResourceURI, urlString);
+        ResourceType resource = new ResourceType();
+        addGeoserverResource(resource);
+
+        if(urlString != null)
+            addResource(resource, XACMLConstants.URlResourceURI, urlString.equals("") ? "/" : urlString);
+
         if (httpParams != null && httpParams.size() > 0) {
             for (Entry<String, Object> entry : httpParams.entrySet()) {
                 URI paramURI = null;
@@ -71,34 +64,43 @@ public class URLMatchRequestCtxBuilder extends RequestCtxBuilder {
                 }
                 if (entry.getValue() instanceof String[]) {
                     for (String value : (String[]) entry.getValue()) {
-                        addResource(resources, paramURI, value);
+                        addResource(resource, paramURI, value);
                     }
                 } else {
-                    addResource(resources, paramURI, entry.getValue().toString());
+                    addResource(resource, paramURI, entry.getValue().toString());
                 }
 
             }
         }
 
 
-        Set<Attribute> actions = new HashSet<Attribute>(1);
-        addAction(actions);
+        ActionType action = new ActionType();
+        addAction(action);
 
-        Set<Attribute> environment = new HashSet<Attribute>(1);
+        EnvironmentType environment = new EnvironmentType();
         try {
             if (remoteHost != null) {
-                environment.add(new Attribute(XACMLConstants.DNSNameEnvironmentURI, null, null,
-                        new DNSNameAttribute(remoteHost)));
+                AttributeValueType value = new AttributeValueType();
+                AttributeType attr = new AttributeType();
+
+                attr.setAttributeId(XACMLConstants.DNSNameEnvironmentId);
+                attr.setDataType(new DnsNameDataTypeAttribute());
+                attr.getAttributeValues().add(value);
+
+                value.getContent().add(remoteHost);
+                environment.getAttributes().add(attr);
             }
             if (remoteIP != null) {
-                InetAddress addr = InetAddress.getByName(remoteIP);
-                if (addr instanceof Inet4Address)
-                    environment.add(new Attribute(XACMLConstants.IPAddressEnvironmentURI, null, null,
-                            new IPv4AddressAttribute(addr)));
-                if (addr instanceof Inet6Address) {
-                    environment.add(new Attribute(XACMLConstants.IPAddressEnvironmentURI, null, null,
-                            new IPv6AddressAttribute(addr)));
-                }
+                AttributeValueType value = new AttributeValueType();
+                AttributeType attr = new AttributeType();
+
+                attr.setAttributeId(XACMLConstants.IPAddressEnvironmentId);
+                attr.setDataType(new IpAddressDataTypeAttribute());
+                attr.getAttributeValues().add(value);
+                value.getContent().add(remoteIP);
+                value.getContent().add(remoteIP);
+
+                environment.getAttributes().add(attr);
             }
         } catch (Exception ex) {
             throw new RuntimeException(ex); // should not happen
@@ -106,9 +108,13 @@ public class URLMatchRequestCtxBuilder extends RequestCtxBuilder {
         
         
 
-        RequestCtx ctx = new RequestCtx(subjects, resources, actions, environment);
-        return ctx;
+        RequestType ctx = new RequestType();
+        ctx.setAction(action);
+        ctx.setEnvironment(environment);
+        ctx.getResources().add(resource);
+        ctx.getSubjects().add(subject);
 
+        return ctx;
     }
 
 }

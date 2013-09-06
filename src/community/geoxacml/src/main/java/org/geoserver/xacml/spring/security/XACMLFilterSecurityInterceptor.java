@@ -18,9 +18,11 @@ import org.springframework.security.web.access.intercept.FilterSecurityIntercept
  */
 public class XACMLFilterSecurityInterceptor extends FilterSecurityInterceptor {
 
+    private XACMLFilterSecurityMetadataSource source = new XACMLFilterSecurityMetadataSource();
+
     @Override
     public SecurityMetadataSource obtainSecurityMetadataSource() {
-        return XACMLFilterSecurityMetadataSource.Singleton;
+        return source;
     }
 
 }

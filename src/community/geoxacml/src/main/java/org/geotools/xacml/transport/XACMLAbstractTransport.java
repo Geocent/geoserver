@@ -17,15 +17,16 @@
 
 package org.geotools.xacml.transport;
 
+import org.herasaf.xacml.core.context.RequestMarshaller;
+import org.herasaf.xacml.core.context.ResponseMarshaller;
+import org.herasaf.xacml.core.context.impl.RequestType;
+import org.herasaf.xacml.core.context.impl.ResponseType;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import com.sun.xacml.Indenter;
-import com.sun.xacml.ctx.RequestCtx;
-import com.sun.xacml.ctx.ResponseCtx;
 
 /**
  * Common base class for {@link XACMLTransport} implementations
@@ -37,38 +38,52 @@ public abstract class XACMLAbstractTransport implements XACMLTransport {
 
     protected Logger logger = Logger.getLogger(this.getClass().getName());
 
-    public abstract ResponseCtx evaluateRequestCtx(RequestCtx request);
+    public abstract ResponseType evaluateRequestCtx(RequestType request);
 
-    public abstract List<ResponseCtx> evaluateRequestCtxList(List<RequestCtx> requests);
+    public abstract List<ResponseType> evaluateRequestCtxList(List<RequestType> requests);
 
-    protected void log(RequestCtx ctx) {
+    protected void log(RequestType ctx) {
 
         if (logger.isLoggable(Level.FINE) == false)
             return;
+
+
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ctx.encode(out, new Indenter(2), true);
-        logger.fine(out.toString());
+
         try {
-            out.close();
-        } catch (IOException e) {
+            RequestMarshaller.marshal(ctx, out);
+
+
+            logger.fine(out.toString());
+        } catch (Exception e) {
             // do nothing
+        } finally {
+            try {
+                out.close();
+            } catch (IOException e) {
+                // do nothing
+            }
         }
 
     }
 
-    protected void log(ResponseCtx ctx) {
+    protected void log(ResponseType ctx) {
 
         if (logger.isLoggable(Level.FINE) == false)
             return;
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ctx.encode(out, new Indenter(2), true);
-        logger.fine(out.toString());
         try {
-            out.close();
-        } catch (IOException e) {
+            ResponseMarshaller.marshal(ctx, out);
+            logger.fine(out.toString());
+        } catch (Exception e) {
             // do nothing
+        } finally {
+            try {
+                out.close();
+            } catch (IOException e) {
+                // do nothing
+            }
         }
-
     }
 
 }

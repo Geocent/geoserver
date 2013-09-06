@@ -5,30 +5,24 @@
 
 package org.geoserver.xacml.geoxacml;
 
+import org.herasaf.xacml.core.WritingException;
+import org.herasaf.xacml.core.context.RequestMarshaller;
+import org.herasaf.xacml.core.context.ResponseMarshaller;
+import org.herasaf.xacml.core.context.impl.DecisionType;
+import org.herasaf.xacml.core.context.impl.RequestType;
+import org.herasaf.xacml.core.context.impl.ResponseType;
+import org.herasaf.xacml.core.context.impl.ResultType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
-
-import org.geotools.xacml.geoxacml.attr.GML3Support;
-
-import com.sun.xacml.Indenter;
-import com.sun.xacml.ctx.RequestCtx;
-import com.sun.xacml.ctx.ResponseCtx;
-import com.sun.xacml.ctx.Result;
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.LineString;
-import com.vividsolutions.jts.geom.MultiLineString;
-import com.vividsolutions.jts.geom.MultiPoint;
-import com.vividsolutions.jts.geom.MultiPolygon;
-import com.vividsolutions.jts.geom.Point;
-import com.vividsolutions.jts.geom.Polygon;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 
 /**
  * Some utility methods
@@ -38,15 +32,23 @@ import org.springframework.security.core.userdetails.UserDetails;
  */
 public class XACMLUtil {
 
-    static public String asXMLString(RequestCtx ctx) {
+    static public String asXMLString(RequestType ctx) {
         OutputStream out = new ByteArrayOutputStream();
-        ctx.encode(out, new Indenter(2));
+        try {
+            RequestMarshaller.marshal(ctx, out);
+        } catch (WritingException e) {
+            throw new RuntimeException(e);
+        }
         return out.toString();
     }
 
-    static public String asXMLString(ResponseCtx ctx) {
+    static public String asXMLString(ResponseType ctx) {
         OutputStream out = new ByteArrayOutputStream();
-        ctx.encode(out, new Indenter(2));
+        try {
+            ResponseMarshaller.marshal(ctx, out);
+        } catch (WritingException e) {
+            throw new RuntimeException(e);
+        }
         return out.toString();
     }
 
@@ -57,58 +59,55 @@ public class XACMLUtil {
      *            from role requests
      * @return XACML decision
      */
-    public static int getDecisionFromRoleResponses(List<ResponseCtx> responses) {
+    public static DecisionType getDecisionFromRoleResponses(List<ResponseType> responses) {
         boolean hasPermit = false;
 
-        for (ResponseCtx responseCtx : responses) {
-            int decision = getDecisionFromResponseContext(responseCtx);
-            if (decision == Result.DECISION_INDETERMINATE) // Error
+        for (ResponseType responseCtx : responses) {
+            DecisionType decision = getDecisionFromResponseContext(responseCtx);
+            if (decision == DecisionType.INDETERMINATE){
                 return decision;
-            if (decision == Result.DECISION_PERMIT)
+            } else if (decision == DecisionType.PERMIT){
                 hasPermit = true;
+            }
         }
-        return hasPermit ? Result.DECISION_PERMIT : Result.DECISION_DENY;
+        return hasPermit ? DecisionType.PERMIT : DecisionType.DENY;
 
     }
 
-    public static int getDecisionFromResponseContext(ResponseCtx responseCtx) {
-        Set<Result> results = responseCtx.getResults();
-        // Set<Obligation> permitObligations = new HashSet<Obligation>();
-        // Set<Obligation> denyObligations = new HashSet<Obligation>();
+    public static DecisionType getDecisionFromResponseContext(ResponseType responseCtx) {
+        List<ResultType> results = responseCtx.getResults();
         Set<String> resources = new HashSet<String>();
 
         boolean hasPermit = false, hasDeny = false;
-        for (Result result : results) {
-            int decision = result.getDecision();
-            resources.add(result.getResource());
-            if (decision == Result.DECISION_INDETERMINATE)
-                return Result.DECISION_INDETERMINATE; // error
-            if (decision == Result.DECISION_DENY) {
+        for (ResultType result : results) {
+            DecisionType decision = result.getDecision();
+            resources.add(result.getResourceId());
+            if (decision == DecisionType.INDETERMINATE){
+                return DecisionType.INDETERMINATE;
+            } else if (decision == DecisionType.DENY){
                 hasDeny = true;
-                // denyObligations.addAll(result.getObligations());
             }
-            if (decision == Result.DECISION_PERMIT) {
+            if (decision == DecisionType.PERMIT){
                 hasPermit = true;
-                // permitObligations.addAll(result.getObligations());
             }
         }
         if (hasDeny && hasPermit) {
-            logDecision(Result.DECISION_INDETERMINATE, resources);
-            return Result.DECISION_INDETERMINATE;
+            logDecision(DecisionType.INDETERMINATE, resources);
+            return DecisionType.INDETERMINATE;
         }
         if (!hasDeny && !hasPermit) {
-            logDecision(Result.DECISION_NOT_APPLICABLE, resources);
-            return Result.DECISION_NOT_APPLICABLE;
+            logDecision(DecisionType.NOT_APPLICABLE, resources);
+            return DecisionType.NOT_APPLICABLE;
         }
         if (hasDeny) {
-            logDecision(Result.DECISION_DENY, resources);
-            return Result.DECISION_DENY;
+            logDecision(DecisionType.DENY, resources);
+            return DecisionType.DENY;
         }
 
-        return Result.DECISION_PERMIT;
+        return DecisionType.PERMIT;
     }
 
-    private static void logDecision(int decision, Set<String> resources) {
+    private static void logDecision(DecisionType decision, Set<String> resources) {
         StringBuffer buff = new StringBuffer("User: ");
         buff.append(authenticationAsString());
         buff.append(" resource: ");
@@ -118,7 +117,7 @@ public class XACMLUtil {
         if (resources.size() > 1)
             buff.setLength(buff.length() - 1);
         buff.append(" ");
-        buff.append(Result.DECISIONS[decision]);
+        buff.append(decision);
         getXACMLLogger().info(buff.toString());
     }
 
@@ -142,27 +141,6 @@ public class XACMLUtil {
 
     public static Logger getXACMLLogger() {
         return Logger.getLogger("XACML");
-    }
-
-    public static String getGMLTypeFor(Geometry g) {
-        String gmlType = null;
-        if (g instanceof Point)
-            gmlType = GML3Support.GML_POINT;
-        if (g instanceof LineString)
-            gmlType = GML3Support.GML_LINESTRING;
-        if (g instanceof Polygon)
-            gmlType = GML3Support.GML_POLYGON;
-        if (g instanceof MultiPoint)
-            gmlType = GML3Support.GML_MULTIPOINT;
-        if (g instanceof MultiLineString)
-            gmlType = GML3Support.GML_MULTICURVE;
-        if (g instanceof MultiPolygon)
-            gmlType = GML3Support.GML_MULTISURFACE;
-
-        if (gmlType == null) {
-            throw new RuntimeException("No GML type for " + g.getClass().getName());
-        }
-        return gmlType;
     }
 
 }

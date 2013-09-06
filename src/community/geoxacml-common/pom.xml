@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!-- 
+ Copyright (c) 2001 - 2013 OpenPlans - www.openplans.org. All rights reserved.
+ This code is licensed under the GPL 2.0 license, available at the root
+ application directory.
+ -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.geoserver</groupId>
+	<artifactId>community</artifactId>
+	<version>2.3.2</version>
+  </parent>
+
+  <groupId>org.geoserver</groupId>
+  <artifactId>geoxacml-common</artifactId>
+  <packaging>jar</packaging>
+  <name>GeoXACML functions and datatypes</name>
+
+  <build>
+   <plugins>
+     <plugin>
+      <artifactId>maven-assembly-plugin</artifactId>
+      <version>2.1</version>
+      <configuration>
+        <descriptors>
+          <descriptor>release/ext-geoxacml.xml</descriptor>
+        </descriptors>
+      </configuration>
+     </plugin>
+  </plugins>
+  </build>
+
+
+  <dependencies>
+  
+    <dependency>
+       <groupId>org.geotools</groupId>
+       <artifactId>gt-referencing</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.opensaml</groupId>
+      <artifactId>opensaml</artifactId>
+      <version>2.5.3</version>
+    </dependency>
+
+    <dependency>
+       <groupId>org.geotools</groupId>
+       <artifactId>gt-api</artifactId>
+    </dependency>
+
+    <dependency>
+        <groupId>org.geotools</groupId>
+        <artifactId>gt-xml</artifactId>
+        <version>9.2</version>
+    </dependency>
+
+    <dependency>
+       <groupId>xalan</groupId>
+       <artifactId>xalan</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.herasaf.xacml.core</groupId>
+      <artifactId>herasaf-xacml-core</artifactId>
+      <version>1.0.0.RELEASE</version>
+    </dependency>
+
+    <dependency>
+        <groupId>org.springframework.security</groupId>
+        <artifactId>spring-security-core</artifactId>
+        <scope>compile</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.security</groupId>
+        <artifactId>spring-security-web</artifactId>
+        <scope>compile</scope>
+    </dependency>
+    <dependency>
+       <groupId>org.springframework</groupId>
+       <artifactId>spring-oxm</artifactId>
+       <version>${spring.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.mockrunner</groupId>
+      <artifactId>mockrunner</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.easymock</groupId>
+      <artifactId>easymock</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.easymock</groupId>
+      <artifactId>easymockclassextension</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+  </dependencies>
+  <repositories>
+        <repository>
+            <id>maven.herasaf.org</id>
+            <name>maven.herasaf.org-releases</name>
+            <url>http://maven.herasaf.org/herasaf-release</url>
+        </repository>
+    </repositories>
+
+</project>
+

@@ -30,10 +30,10 @@ import org.springframework.security.core.userdetails.UserDetails;
  * @author Christian Mueller
  * 
  */
-public interface XACMLRoleAuthority {
+public interface XACMLRoleAuthority<T extends UserDetails> {
 
     public void prepareRoles(Authentication auth);
 
-    public <T extends UserDetails> void transformUserDetails(T details);
+    public void transformUserDetails(T details);
 
 }

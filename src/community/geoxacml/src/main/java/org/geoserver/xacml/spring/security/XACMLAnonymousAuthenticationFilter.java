@@ -5,12 +5,8 @@
 
 package org.geoserver.xacml.spring.security;
 
-import java.util.Arrays;
-import java.util.List;
-import javax.servlet.http.HttpServletRequest;
 import org.geoserver.security.impl.GeoServerUser;
 import org.geoserver.xacml.geoxacml.XACMLConstants;
-
 import org.geoserver.xacml.role.XACMLRole;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationDetailsSource;
@@ -19,12 +15,17 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 
+import javax.servlet.http.HttpServletRequest;
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Creating an AnoynmaAuthenticationToken with XACML Roles
  * 
  * @author Christian Mueller
  * 
  */
+//TODO: fix the usage of this
 public class XACMLAnonymousAuthenticationFilter extends AnonymousAuthenticationFilter {
 
     private AuthenticationDetailsSource authenticationDetailsSource = new AuthenticationDetailsSourceImpl();

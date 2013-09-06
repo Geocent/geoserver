@@ -4,25 +4,26 @@
  */
 package org.geoserver.xacml.spring.security;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-
-import org.geoserver.xacml.geoxacml.GeoXACMLConfig;
+import org.geoserver.platform.GeoServerExtensions;
 import org.geoserver.xacml.geoxacml.XACMLUtil;
+import org.geoserver.xacml.request.RequestCtxBuilderFactory;
 import org.geoserver.xacml.role.XACMLRole;
-
-import com.sun.xacml.ctx.RequestCtx;
-import com.sun.xacml.ctx.ResponseCtx;
-import com.sun.xacml.ctx.Result;
-import java.util.Collection;
+import org.geoserver.xacml.role.XACMLRoleAuthority;
+import org.geotools.xacml.transport.XACMLTransport;
+import org.herasaf.xacml.core.context.impl.DecisionType;
+import org.herasaf.xacml.core.context.impl.RequestType;
+import org.herasaf.xacml.core.context.impl.ResponseType;
 import org.springframework.security.access.AccessDecisionVoter;
 import org.springframework.security.access.ConfigAttribute;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.FilterInvocation;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Spring Security Decision Voter using XACML policies
@@ -31,6 +32,16 @@ import org.springframework.security.web.FilterInvocation;
  * 
  */
 public class XACMLFilterDecisionVoter<S> implements AccessDecisionVoter<S> {
+
+    private final XACMLRoleAuthority roleAuthority;
+    private final XACMLTransport transport;
+    private final RequestCtxBuilderFactory factory;
+
+    public XACMLFilterDecisionVoter(){
+        this.roleAuthority = GeoServerExtensions.bean(XACMLRoleAuthority.class);
+        this.transport = GeoServerExtensions.bean(XACMLTransport.class);
+        this.factory = GeoServerExtensions.bean(RequestCtxBuilderFactory.class);
+    }
 
     @Override
     public boolean supports(ConfigAttribute attr) {
@@ -55,34 +66,31 @@ public class XACMLFilterDecisionVoter<S> implements AccessDecisionVoter<S> {
         String remoteHost = httpRequest.getRemoteHost();
         
 
-        List<RequestCtx> requestCtxts = buildRequestCtxListFromRoles(auth, urlPath, method,
+        List<RequestType> requestCtxts = buildRequestCtxListFromRoles(auth, urlPath, method,
                 httpParams, remoteIP,remoteHost);
         if (requestCtxts.isEmpty())
-            return XACMLDecisionMapper.Exact.getSpringSecurityDecisionFor(Result.DECISION_DENY);
+            return XACMLDecisionMapper.Exact.getSpringSecurityDecisionFor(DecisionType.DENY);
 
-        List<ResponseCtx> responseCtxts = GeoXACMLConfig.getXACMLTransport()
-                .evaluateRequestCtxList(requestCtxts);
+        List<ResponseType> responseCtxts = transport.evaluateRequestCtxList(requestCtxts);
 
-        int xacmlDecision = XACMLUtil.getDecisionFromRoleResponses(responseCtxts);
+        DecisionType xacmlDecision = XACMLUtil.getDecisionFromRoleResponses(responseCtxts);
         return XACMLDecisionMapper.Exact.getSpringSecurityDecisionFor(xacmlDecision);
 
     }
 
-    private List<RequestCtx> buildRequestCtxListFromRoles(Authentication auth, String urlPath,
+    private List<RequestType> buildRequestCtxListFromRoles(Authentication auth, String urlPath,
             String method, Map<String, Object> httpParams,String remoteIP,String remoteHost) {
 
-        GeoXACMLConfig.getXACMLRoleAuthority().prepareRoles(auth);
+        roleAuthority.prepareRoles(auth);
 
-        List<RequestCtx> resultList = new ArrayList<RequestCtx>();
+        List<RequestType> resultList = new ArrayList<RequestType>();
 
         for (GrantedAuthority role : auth.getAuthorities()) {
             XACMLRole xacmlRole = (XACMLRole) role;
             if (xacmlRole.isEnabled() == false)
                 continue;
-            RequestCtx requestCtx = GeoXACMLConfig.getRequestCtxBuilderFactory()
-                    .getURLMatchRequestCtxBuilder(xacmlRole, urlPath, method, httpParams,remoteIP,remoteHost)
-                    .createRequestCtx();
-            // XACMLUtil.getXACMLLogger().info(XACMLUtil.asXMLString(requestCtx));
+            RequestType requestCtx = factory.getURLMatchRequestCtxBuilder(xacmlRole, urlPath, method, httpParams,remoteIP,remoteHost)
+                    .createRequest();
             resultList.add(requestCtx);
         }
 

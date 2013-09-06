@@ -53,11 +53,12 @@
         <param-value>C:\eclipse\workspace\geoserver_trunk\cite\confCiteWFSPostGIS</param-value>
     </context-param> 
    -->
+   
     
     <!-- pick up all spring application contexts -->
     <context-param>
         <param-name>contextConfigLocation</param-name>
-        <param-value>classpath*:/applicationContext.xml classpath*:/applicationSecurityContext.xml</param-value>
+        <param-value>classpath*:/samlSecurityContext.xml classpath*:/applicationContext.xml classpath*:/applicationSecurityContext.xml</param-value>
     </context-param>
     
     <filter>

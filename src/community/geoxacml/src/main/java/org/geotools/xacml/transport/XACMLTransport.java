@@ -17,10 +17,10 @@
 
 package org.geotools.xacml.transport;
 
-import java.util.List;
+import org.herasaf.xacml.core.context.impl.RequestType;
+import org.herasaf.xacml.core.context.impl.ResponseType;
 
-import com.sun.xacml.ctx.RequestCtx;
-import com.sun.xacml.ctx.ResponseCtx;
+import java.util.List;
 
 /**
  * Since XACML says nothing about the communication between PEP and PDP, this interface offers the
@@ -31,8 +31,9 @@ import com.sun.xacml.ctx.ResponseCtx;
  */
 public interface XACMLTransport {
 
-    public List<ResponseCtx> evaluateRequestCtxList(List<RequestCtx> requests);
+    public List<ResponseType> evaluateRequestCtxList(List<RequestType> requests);
 
-    public ResponseCtx evaluateRequestCtx(RequestCtx request);
+    public ResponseType evaluateRequestCtx(RequestType request);
+
 
 }

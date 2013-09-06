@@ -5,7 +5,7 @@
 
 package org.geoserver.xacml.spring.security;
 
-import com.sun.xacml.ctx.Result;
+import org.herasaf.xacml.core.context.impl.DecisionType;
 import org.springframework.security.access.AccessDecisionVoter;
 
 /**
@@ -31,15 +31,15 @@ public class XACMLDecisionMapper {
         this.mappingForNotApplicable = mappingForNotApplicable;
     }
 
-    int getSpringSecurityDecisionFor(int xacmlDecision) {
+    int getSpringSecurityDecisionFor(DecisionType xacmlDecision) {
         switch (xacmlDecision) {
-        case Result.DECISION_DENY:
+        case DENY:
             return AccessDecisionVoter.ACCESS_DENIED;
-        case Result.DECISION_PERMIT:
+        case PERMIT:
             return AccessDecisionVoter.ACCESS_GRANTED;
-        case Result.DECISION_NOT_APPLICABLE:
+        case NOT_APPLICABLE:
             return mappingForNotApplicable;
-        case Result.DECISION_INDETERMINATE:
+        case INDETERMINATE:
             throw new RuntimeException(
                     "Never should reach this point, no existing spring security mapping for xacml DECISION_INDETERMINATE");
         }

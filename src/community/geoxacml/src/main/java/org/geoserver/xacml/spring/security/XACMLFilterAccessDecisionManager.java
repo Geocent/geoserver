@@ -4,13 +4,15 @@
  */
 package org.geoserver.xacml.spring.security;
 
-import java.util.Collection;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.access.AccessDecisionVoter;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.ConfigAttribute;
 import org.springframework.security.access.vote.AbstractAccessDecisionManager;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
+import org.springframework.security.core.Authentication;
+
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Spring Security AccessDecsionsManger implementation for Services
@@ -19,6 +21,10 @@ import org.springframework.security.authentication.InsufficientAuthenticationExc
  * 
  */
 public class XACMLFilterAccessDecisionManager extends AbstractAccessDecisionManager {
+
+    public XACMLFilterAccessDecisionManager(List<AccessDecisionVoter> decisionVoters) {
+        super(decisionVoters);
+    }
 
     public void decide(Authentication auth, Object arg1, Collection<ConfigAttribute> arg2)
             throws AccessDeniedException, InsufficientAuthenticationException {

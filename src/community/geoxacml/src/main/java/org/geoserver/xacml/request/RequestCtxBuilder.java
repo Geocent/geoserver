@@ -5,30 +5,20 @@
 
 package org.geoserver.xacml.request;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
+import com.vividsolutions.jts.geom.Envelope;
+import com.vividsolutions.jts.geom.Geometry;
 import org.geoserver.ows.Dispatcher;
 import org.geoserver.xacml.geoxacml.XACMLConstants;
-import org.geoserver.xacml.geoxacml.XACMLUtil;
 import org.geoserver.xacml.role.XACMLRole;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.geometry.jts.ReferencedEnvelope;
-import org.geotools.xacml.geoxacml.attr.GMLVersion;
-import org.geotools.xacml.geoxacml.attr.GeometryAttribute;
+import org.geotools.xacml.geoxacml.attr.GeometryDataTypeAttribute;
+import org.herasaf.xacml.core.context.impl.*;
+import org.herasaf.xacml.core.dataTypeAttribute.impl.StringDataTypeAttribute;
 import org.vfny.geoserver.Request;
 
-import com.sun.xacml.attr.AnyURIAttribute;
-import com.sun.xacml.attr.AttributeValue;
-import com.sun.xacml.attr.StringAttribute;
-import com.sun.xacml.ctx.Attribute;
-import com.sun.xacml.ctx.RequestCtx;
-import com.sun.xacml.ctx.Subject;
-import com.vividsolutions.jts.geom.Envelope;
-import com.vividsolutions.jts.geom.Geometry;
+import java.net.URI;
+import java.util.Map;
 
 /**
  * Base class for geoxacml request context builders The class inheritance structure is mirrored from
@@ -38,7 +28,7 @@ import com.vividsolutions.jts.geom.Geometry;
  * @author Christian Mueller
  * 
  */
-public abstract class RequestCtxBuilder extends Object {
+public abstract class RequestCtxBuilder {
 
     private XACMLRole role;
 
@@ -53,70 +43,103 @@ public abstract class RequestCtxBuilder extends Object {
         this.action = action;
     }
 
-    protected void addRole(Set<Subject> subjects) {
+    protected void addRole(SubjectType subject) {
 
-        URI roleURI = null;
-        try {
-            roleURI = new URI(role.getAuthority());
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
+        AttributeValueType roleAttributeValue = new AttributeValueType();
+        roleAttributeValue.getContent().add(role.getAuthority());
+
+        AttributeType roleAttribute = new AttributeType();
+        roleAttribute.setDataType(new StringDataTypeAttribute());
+                roleAttribute.setAttributeId(XACMLConstants.RoleAttributeId);
+        roleAttribute.getAttributeValues().add(roleAttributeValue);
+
+
+        subject.getAttributes().add(roleAttribute);
+
+        for (AttributeType attr : role.getAttributes()) {
+            subject.getAttributes().add(attr);
         }
 
-        Set<Attribute> subjectAttributes = new HashSet<Attribute>(1 + role.getAttributes().size());
-
-        AttributeValue roleAttributeValue = new AnyURIAttribute(roleURI);
-        Attribute roleAttribute = new Attribute(XACMLConstants.RoleAttributeURI, null, null,
-                roleAttributeValue);
-        subjectAttributes.add(roleAttribute);
-
-        for (Attribute attr : role.getAttributes()) {
-            subjectAttributes.add(attr);
-        }
-
-        Subject subject = new Subject(subjectAttributes);
-        subjects.add(subject);
-
     }
 
-    protected void addAction(Set<Attribute> actions) {
-        actions.add(new Attribute(XACMLConstants.ActionAttributeURI, null, null,
-                new StringAttribute(action)));
+    protected void addAction(ActionType action) {
+
+        AttributeType attribute = new AttributeType();
+        attribute.setAttributeId(XACMLConstants.ActionAttributeId);
+        attribute.setDataType(new StringDataTypeAttribute());
+
+        AttributeValueType attributeValue = new AttributeValueType();
+        attributeValue.getContent().add(this.action);
+
+        attribute.getAttributeValues().add(attributeValue);
+        action.getAttributes().add(attribute);
     }
 
-    protected void addResource(Set<Attribute> resources, URI id, String resourceName) {
-        resources.add(new Attribute(id, null, null, new StringAttribute(resourceName)));
+    protected void addResource(ResourceType resource, URI id, String resourceName) {
+        AttributeType attribute = new AttributeType();
+        attribute.setAttributeId(id.toString());
+        attribute.setDataType(new StringDataTypeAttribute());
+
+        AttributeValueType attributeValue = new AttributeValueType();
+        attributeValue.getContent().add(resourceName);
+
+        attribute.getAttributeValues().add(attributeValue);
+        resource.getAttributes().add(attribute);
     }
 
-    protected void addGeoserverResource(Set<Attribute> resources) {
-        resources.add(new Attribute(XACMLConstants.ResourceAttributeURI, null, null,
-                new StringAttribute("GeoServer")));
+    protected void addGeoserverResource(ResourceType resource) {
+        AttributeType attribute = new AttributeType();
+        attribute.setAttributeId(XACMLConstants.ResourceAttributeId);
+        attribute.setDataType(new StringDataTypeAttribute());
+
+        AttributeValueType attributeValue = new AttributeValueType();
+        attributeValue.getContent().add("GeoServer");
+
+        attribute.getAttributeValues().add(attributeValue);
+        resource.getAttributes().add(attribute);
     }
 
-    protected void addOWSService(Set<Attribute> resources) {
+    protected void addOWSService(ResourceType resource) {
         org.geoserver.ows.Request owsRequest = Dispatcher.REQUEST.get();
         if (owsRequest == null)
             return;
-        resources.add(new Attribute(XACMLConstants.OWSRequestResourceURI, null, null,
-                new StringAttribute(owsRequest.getRequest())));
-        resources.add(new Attribute(XACMLConstants.OWSServiceResourceURI, null, null,
-                new StringAttribute(owsRequest.getService())));
+        AttributeType attribute = new AttributeType();
+        attribute.setAttributeId(XACMLConstants.OWSRequestResouceId);
+        attribute.setDataType(new StringDataTypeAttribute());
+
+        AttributeValueType attributeValue = new AttributeValueType();
+        attributeValue.getContent().add(owsRequest.getRequest());
+
+        attribute.getAttributeValues().add(attributeValue);
+        resource.getAttributes().add(attribute);
+
+        attribute = new AttributeType();
+        attribute.setAttributeId(XACMLConstants.OWSServiceResouceId);
+        attribute.setDataType(new StringDataTypeAttribute());
+
+        attributeValue = new AttributeValueType();
+        attributeValue.getContent().add(owsRequest.getService());
+
+        attribute.getAttributeValues().add(attributeValue);
+        resource.getAttributes().add(attribute);
     }
 
-    protected void addGeometry(Set<Attribute> resources, URI attributeURI, Geometry g,
+    protected void addGeometry(ResourceType resource, URI attributeURI, Geometry g,
             String srsName) {
 
-        String gmlType = XACMLUtil.getGMLTypeFor(g);
 
-        GeometryAttribute geomAttr = null;
-        try {
-            geomAttr = new GeometryAttribute(g, srsName, null, GMLVersion.Version3, gmlType);
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
-        resources.add(new Attribute(attributeURI, null, null, geomAttr));
+        AttributeType attribute = new AttributeType();
+        attribute.setAttributeId(attributeURI.toString());
+        attribute.setDataType(new GeometryDataTypeAttribute());
+
+        AttributeValueType attributeValue = new AttributeValueType();
+        attributeValue.getContent().add(g);
+
+        attribute.getAttributeValues().add(attributeValue);
+        resource.getAttributes().add(attribute);
     }
 
-    protected void addBbox(Set<Attribute> resources) {
+    protected void addBbox(ResourceType resource) {
         org.geoserver.ows.Request owsRequest = Dispatcher.REQUEST.get();
         if (owsRequest == null)
             return;
@@ -132,10 +155,10 @@ public abstract class RequestCtxBuilder extends Object {
         String srsName = (String) kvp.get("SRS");
         Geometry geom = JTS.toGeometry((Envelope) env);
 
-        addGeometry(resources, XACMLConstants.BBoxResourceURI, geom, srsName);
+        addGeometry(resource, XACMLConstants.BBoxResourceURI, geom, srsName);
 
     }
 
-    abstract public RequestCtx createRequestCtx();
+    abstract public RequestType createRequest();
 
 }

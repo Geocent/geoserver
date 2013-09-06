@@ -5,11 +5,12 @@
 
 package org.geoserver.xacml.spring.security;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import org.springframework.security.access.ConfigAttribute;
 import org.springframework.security.access.SecurityConfig;
-import org.springframework.security.access.SecurityMetadataSource;
+import org.springframework.security.web.access.intercept.FilterInvocationSecurityMetadataSource;
+
+import java.util.ArrayList;
+import java.util.Collection;
 
 
 /**
@@ -18,11 +19,9 @@ import org.springframework.security.access.SecurityMetadataSource;
  * @author Christian Mueller
  * 
  */
-public class XACMLFilterSecurityMetadataSource implements SecurityMetadataSource {
+public class XACMLFilterSecurityMetadataSource implements FilterInvocationSecurityMetadataSource {
 
     private static final Collection<ConfigAttribute> ConfigDef = new ArrayList<ConfigAttribute>();
-
-    public final static XACMLFilterSecurityMetadataSource Singleton = new XACMLFilterSecurityMetadataSource();
 
     static {
         ConfigDef.add(new SecurityConfig("xacml"));

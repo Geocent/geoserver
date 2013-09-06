@@ -5,18 +5,12 @@
 
 package org.geoserver.xacml.request;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import org.geoserver.security.AccessMode;
+import org.geoserver.security.CatalogMode;
 import org.geoserver.xacml.geoxacml.XACMLConstants;
 import org.geoserver.xacml.role.XACMLRole;
-
-import com.sun.xacml.attr.StringAttribute;
-import com.sun.xacml.ctx.Attribute;
-import com.sun.xacml.ctx.RequestCtx;
-import com.sun.xacml.ctx.Subject;
-import org.geoserver.security.CatalogMode;
+import org.herasaf.xacml.core.context.impl.*;
+import org.herasaf.xacml.core.dataTypeAttribute.impl.StringDataTypeAttribute;
 
 /**
  * Builds a request for testing access of geoserver to the catalog (always Permit) The idea here is
@@ -40,28 +34,39 @@ public class XACMLRoleRequestCtxBuilder extends RequestCtxBuilder {
     }
 
     @Override
-    public RequestCtx createRequestCtx() {
+    public RequestType createRequest() {
 
-        Set<Subject> subjects = new HashSet<Subject>(1);
-        addRole(subjects);
+        SubjectType subject = new SubjectType();
+        ResourceType resource = new ResourceType();
+        ActionType action = new ActionType();
+        EnvironmentType environment = new EnvironmentType();
+        addRole(subject);
 
-        Set<Attribute> resources = new HashSet<Attribute>(1);
-        addGeoserverResource(resources);
-        addResource(resources, XACMLConstants.RoleEnablemetnResourceURI, targetRole.getAuthority());
+        addGeoserverResource(resource);
+        addResource(resource, XACMLConstants.RoleEnablemetnResourceURI, targetRole.getAuthority());
 
 
-        Set<Attribute> actions = new HashSet<Attribute>(1);
-        addAction(actions);
+        addAction(action);
 
-        Set<Attribute> environment = new HashSet<Attribute>(1);
         if (userName != null) {
-            environment.add(new Attribute(XACMLConstants.UserEnvironmentURI,null,null,new StringAttribute(userName)));            
+            AttributeType attribute = new AttributeType();
+            AttributeValueType attributeValue = new AttributeValueType();
+
+            attribute.setAttributeId(XACMLConstants.UserEnvironmentId);
+            attribute.setDataType(new StringDataTypeAttribute());
+            attribute.getAttributeValues().add(attributeValue);
+            attributeValue.getContent().add(userName);
+
+            environment.getAttributes().add(attribute);
         }
 
-        
-        RequestCtx ctx = new RequestCtx(subjects, resources, actions, environment);
-        return ctx;
 
+        RequestType ctx = new RequestType();
+        ctx.getSubjects().add(subject);
+        ctx.getResources().add(resource);
+        ctx.setAction(action);
+        ctx.setEnvironment(environment);
+        return ctx;
     }
 
 }

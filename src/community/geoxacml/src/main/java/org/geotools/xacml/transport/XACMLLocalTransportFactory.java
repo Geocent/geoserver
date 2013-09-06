@@ -4,7 +4,7 @@
  */
 package org.geotools.xacml.transport;
 
-import com.sun.xacml.PDP;
+import org.herasaf.xacml.core.api.PDP;
 
 /**
  * Default factory creating transport objects for a local PDP

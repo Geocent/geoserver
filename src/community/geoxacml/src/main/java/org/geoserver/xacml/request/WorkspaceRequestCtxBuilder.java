@@ -5,17 +5,11 @@
 
 package org.geoserver.xacml.request;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import org.geoserver.catalog.WorkspaceInfo;
 import org.geoserver.security.AccessMode;
 import org.geoserver.xacml.geoxacml.XACMLConstants;
 import org.geoserver.xacml.role.XACMLRole;
-
-import com.sun.xacml.ctx.Attribute;
-import com.sun.xacml.ctx.RequestCtx;
-import com.sun.xacml.ctx.Subject;
+import org.herasaf.xacml.core.context.impl.*;
 
 /**
  * Builds a request for workspace access control
@@ -37,21 +31,24 @@ public class WorkspaceRequestCtxBuilder extends RequestCtxBuilder {
     }
 
     @Override
-    public RequestCtx createRequestCtx() {
+    public RequestType createRequest() {
 
-        Set<Subject> subjects = new HashSet<Subject>(1);
-        addRole(subjects);
+        SubjectType subject = new SubjectType();
+        ResourceType resource = new ResourceType();
+        ActionType action = new ActionType();
+        EnvironmentType environment = new EnvironmentType();
+        addRole(subject);
 
-        Set<Attribute> resources = new HashSet<Attribute>(1);
-        addGeoserverResource(resources);
-        addResource(resources, XACMLConstants.WorkspaceURI, workspaceName);
+        addGeoserverResource(resource);
+        addResource(resource, XACMLConstants.WorkspaceURI, workspaceName);
 
-        Set<Attribute> actions = new HashSet<Attribute>(1);
-        addAction(actions);
+        addAction(action);
 
-        Set<Attribute> environment = new HashSet<Attribute>(1);
-
-        RequestCtx ctx = new RequestCtx(subjects, resources, actions, environment);
+        RequestType ctx = new RequestType();
+        ctx.getSubjects().add(subject);
+        ctx.getResources().add(resource);
+        ctx.setAction(action);
+        ctx.setEnvironment(environment);
         return ctx;
     }
 

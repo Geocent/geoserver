@@ -5,12 +5,11 @@
 
 package org.geoserver.xacml.role;
 
+import org.herasaf.xacml.core.context.impl.AttributeType;
+import org.springframework.security.core.GrantedAuthority;
+
 import java.util.HashSet;
 import java.util.Set;
-
-
-import com.sun.xacml.ctx.Attribute;
-import org.springframework.security.core.GrantedAuthority;
 
 /**
  * @author Christian Mueller
@@ -27,7 +26,7 @@ import org.springframework.security.core.GrantedAuthority;
  * 
  * 
  */
-public class XACMLRole implements GrantedAuthority {
+public class XACMLRole implements GrantedAuthority, Comparable<GrantedAuthority> {
 
     /**
      * 
@@ -36,7 +35,7 @@ public class XACMLRole implements GrantedAuthority {
 
     private String authority;
 
-    private Set<Attribute> attributes;
+    private Set<AttributeType> attributes;
 
     private boolean enabled;
 
@@ -62,20 +61,21 @@ public class XACMLRole implements GrantedAuthority {
         this(authority, null);
     }
 
-    public XACMLRole(String authority, Set<Attribute> attributes) {
+    public XACMLRole(String authority, Set<AttributeType> attributes) {
         this.authority = authority;
         this.attributes = attributes;
         this.enabled = true;
         this.roleAttributesProcessed = false;
     }
 
+    @Override
     public String getAuthority() {
         return authority;
     }
 
-    public Set<Attribute> getAttributes() {
+    public Set<AttributeType> getAttributes() {
         if (attributes == null)
-            attributes = new HashSet<Attribute>();
+            attributes = new HashSet<AttributeType>();
         return attributes;
     }
 
@@ -83,9 +83,9 @@ public class XACMLRole implements GrantedAuthority {
         return attributes != null && attributes.isEmpty() == false;
     }
 
-    public int compareTo(Object o) {
-        XACMLRole other = (XACMLRole) o;
-        return getAuthority().compareTo(other.getAuthority());
+    @Override
+    public int compareTo(GrantedAuthority o) {
+        return getAuthority().compareTo(o.getAuthority());
     }
 
 }

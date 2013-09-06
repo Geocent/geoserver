@@ -79,25 +79,15 @@
     <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>javacc-maven-plugin</artifactId>
-        <version>2.3</version>
+        <version>2.6</version>
         <executions>
           <execution>
-            <id>jjtree</id>
+            <id>jjtree-javacc</id>
             <goals>
-              <goal>jjtree</goal>
+              <goal>jjtree-javacc</goal>
             </goals>
             <configuration>
               <sourceDirectory>src/main/java/org/geoserver/wcs/kvp/rangesubset</sourceDirectory>
-              <outputDirectory>target/generated-sources/jjtree</outputDirectory>
-            </configuration>
-          </execution>
-          <execution>
-            <id>javacc</id>
-            <goals>
-              <goal>javacc</goal>
-            </goals>
-            <configuration>
-              <sourceDirectory>target/generated-sources/jjtree/</sourceDirectory>
               <outputDirectory>target/generated-sources/javacc</outputDirectory>
             </configuration>
           </execution>

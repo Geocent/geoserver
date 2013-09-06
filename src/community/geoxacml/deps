@@ -1,0 +1,220 @@
+<dependency>
+    <groupId>org.geotools</groupId>
+    <artifactId>gt-referencing</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools</groupId>
+    <artifactId>gt-metadata</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools</groupId>
+    <artifactId>gt-opengis</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools</groupId>
+    <artifactId>gt-api</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools</groupId>
+    <artifactId>gt-epsg-hsql</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools.ogc</groupId>
+    <artifactId>net.opengis.ows</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.w3.xlink</groupId>
+    <artifactId>jar</artifactId>
+    <version>com</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools.xsd</groupId>
+    <artifactId>gt-xsd-ows</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools.xsd</groupId>
+    <artifactId>gt-xsd-core</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools</groupId>
+    <artifactId>gt-cql</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools</groupId>
+    <artifactId>gt-coverage</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools</groupId>
+    <artifactId>gt-validation</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools</groupId>
+    <artifactId>gt-graph</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools</groupId>
+    <artifactId>gt-data</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools</groupId>
+    <artifactId>gt-jdbc</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools</groupId>
+    <artifactId>gt-property</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools</groupId>
+    <artifactId>gt-wms</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools</groupId>
+    <artifactId>gt-xml</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools.xsd</groupId>
+    <artifactId>gt-xsd-sld</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools.xsd</groupId>
+    <artifactId>gt-xsd-filter</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools.xsd</groupId>
+    <artifactId>gt-xsd-gml2</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools.xsd</groupId>
+    <artifactId>gt-xsd-gml3</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools</groupId>
+    <artifactId>gt-imagemosaic</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools.jdbc</groupId>
+    <artifactId>gt-jdbc-h2</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools.jdbc</groupId>
+    <artifactId>gt-jdbc-oracle</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools.jdbc</groupId>
+    <artifactId>gt-jdbc-postgis</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools</groupId>
+    <artifactId>gt-shapefile</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools.ogc</groupId>
+    <artifactId>net.opengis.wfs</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools.ogc</groupId>
+    <artifactId>net.opengis.fes</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools.xsd</groupId>
+    <artifactId>gt-xsd-wfs</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools.xsd</groupId>
+    <artifactId>gt-xsd-fes</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools</groupId>
+    <artifactId>gt-render</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools</groupId>
+    <artifactId>gt-svg</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools</groupId>
+    <artifactId>gt-shapefile-renderer</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools</groupId>
+    <artifactId>gt-geotiff</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools</groupId>
+    <artifactId>gt-wfs</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools</groupId>
+    <artifactId>gt-process</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools</groupId>
+    <artifactId>gt-process-raster</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools</groupId>
+    <artifactId>gt-process-feature</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools</groupId>
+    <artifactId>gt-grid</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools</groupId>
+    <artifactId>gt-arcgrid</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools</groupId>
+    <artifactId>gt-gtopo30</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools</groupId>
+    <artifactId>gt-image</artifactId>
+    <version>9.2</version>
+</dependency>
+<dependency>
+    <groupId>org.geotools</groupId>
+    <artifactId>gt-main</artifactId>
+    <version>9.2</version>
+</dependency>

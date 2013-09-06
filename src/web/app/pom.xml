@@ -767,6 +767,16 @@
       </dependencies>
     </profile>
     <profile>
+      <id>saml2auth</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.geoserver.community</groupId>
+          <artifactId>saml2auth</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
       <id>gt-ogr</id>
       <dependencies>
         <dependency>

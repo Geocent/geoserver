@@ -4,23 +4,13 @@
  */
 package org.geoserver.xacml.geoxacml;
 
-import java.io.BufferedReader;
-import java.io.IOException;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.AbstractController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-
-import org.geotools.xacml.geoxacml.config.GeoXACML;
-import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.mvc.AbstractController;
-import org.w3c.dom.Document;
-
-import com.sun.xacml.Indenter;
-import com.sun.xacml.PDP;
-import com.sun.xacml.ctx.RequestCtx;
-import com.sun.xacml.ctx.ResponseCtx;
+import java.io.BufferedReader;
+import java.io.IOException;
 
 /**
  * Controller which acts as GeoXACML Policy Decision Point
@@ -46,7 +36,8 @@ public class GeoXACMLPDPController extends AbstractController {
     protected ModelAndView handleRequestInternal(HttpServletRequest req, HttpServletResponse resp)
             throws Exception {
 
-        PDP pdp = GeoXACMLConfig.getPDP();
+        //TODO: Refactor this for HERAS-AF
+        /*PDP pdp = GeoXACMLConfig.getPDP();
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setIgnoringComments(true);
         factory.setIgnoringElementContentWhitespace(true);
@@ -66,7 +57,7 @@ public class GeoXACMLPDPController extends AbstractController {
         RequestCtx request = RequestCtx.getInstance(doc.getDocumentElement());
         ResponseCtx response = pdp.evaluate(request);
 
-        response.encode(resp.getOutputStream(), new Indenter(0), true);
+        response.encode(resp.getOutputStream(), new Indenter(0), true);*/
         return null;
     }
 

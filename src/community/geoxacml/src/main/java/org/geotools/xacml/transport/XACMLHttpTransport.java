@@ -17,7 +17,13 @@
 
 package org.geotools.xacml.transport;
 
+import org.herasaf.xacml.core.context.RequestMarshaller;
+import org.herasaf.xacml.core.context.ResponseMarshaller;
+import org.herasaf.xacml.core.context.impl.RequestType;
+import org.herasaf.xacml.core.context.impl.ResponseType;
+
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -31,9 +37,6 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.sun.xacml.Indenter;
-import com.sun.xacml.ctx.RequestCtx;
-import com.sun.xacml.ctx.ResponseCtx;
 
 /**
  * Transport Object for a remote PDP reachable by an http POST request. Since XACML requests are
@@ -51,16 +54,16 @@ public class XACMLHttpTransport extends XACMLAbstractTransport {
      * 
      */
 
-    private static InheritableThreadLocal<Map<String, ResponseCtx>> DigestMap = new InheritableThreadLocal<Map<String, ResponseCtx>>();;
+    private static InheritableThreadLocal<Map<String, ResponseType>> DigestMap = new InheritableThreadLocal<Map<String, ResponseType>>();;
 
     public class HttpThread extends Thread {
-        private RequestCtx requestCtx = null;
+        private RequestType requestCtx = null;
 
-        public RequestCtx getRequestCtx() {
+        public RequestType getRequestCtx() {
             return requestCtx;
         }
 
-        private ResponseCtx responseCtx = null;
+        private ResponseType responseCtx = null;
 
         private RuntimeException runtimeException = null;
 
@@ -68,11 +71,11 @@ public class XACMLHttpTransport extends XACMLAbstractTransport {
             return runtimeException;
         }
 
-        public ResponseCtx getResponseCtx() {
+        public ResponseType getResponseCtx() {
             return responseCtx;
         }
 
-        HttpThread(RequestCtx requestCtx) {
+        HttpThread(RequestType requestCtx) {
             this.requestCtx = requestCtx;
         }
 
@@ -96,16 +99,16 @@ public class XACMLHttpTransport extends XACMLAbstractTransport {
         this.pdpURL = pdpURL;
     }
 
-    public ResponseCtx evaluateRequestCtx(RequestCtx request) {
+    public ResponseType evaluateRequestCtx(RequestType request) {
         initDigestMap();
         log(request);
-        ResponseCtx response = sendHttpPost(request);
+        ResponseType response = sendHttpPost(request);
         log(response);
         return response;
 
     }
 
-    public List<ResponseCtx> evaluateRequestCtxList(List<RequestCtx> requests) {
+    public List<ResponseType> evaluateRequestCtxList(List<RequestType> requests) {
         initDigestMap();
         if (multiThreaded)
             return evaluateRequestCtxListMultiThreaded(requests);
@@ -113,19 +116,19 @@ public class XACMLHttpTransport extends XACMLAbstractTransport {
             return evaluateRequestCtxListSerial(requests);
     }
 
-    private List<ResponseCtx> evaluateRequestCtxListSerial(List<RequestCtx> requests) {
-        List<ResponseCtx> resultList = new ArrayList<ResponseCtx>();
-        for (RequestCtx request : requests) {
+    private List<ResponseType> evaluateRequestCtxListSerial(List<RequestType> requests) {
+        List<ResponseType> resultList = new ArrayList<ResponseType>();
+        for (RequestType request : requests) {
             log(request);
-            ResponseCtx response = sendHttpPost(request);
+            ResponseType response = sendHttpPost(request);
             log(response);
             resultList.add(response);
         }
         return resultList;
     }
 
-    private List<ResponseCtx> evaluateRequestCtxListMultiThreaded(List<RequestCtx> requests) {
-        List<ResponseCtx> resultList = new ArrayList<ResponseCtx>(requests.size());
+    private List<ResponseType> evaluateRequestCtxListMultiThreaded(List<RequestType> requests) {
+        List<ResponseType> resultList = new ArrayList<ResponseType>(requests.size());
         List<HttpThread> threadList = new ArrayList<HttpThread>(requests.size());
 
         if (requests.size() == 1) { // no threading for only one request
@@ -133,7 +136,7 @@ public class XACMLHttpTransport extends XACMLAbstractTransport {
             return resultList;
         }
 
-        for (RequestCtx request : requests) {
+        for (RequestType request : requests) {
             HttpThread t = new HttpThread(request);
             t.start();
             threadList.add(t);
@@ -157,23 +160,25 @@ public class XACMLHttpTransport extends XACMLAbstractTransport {
 
     private void initDigestMap() {
         if (DigestMap.get() == null)
-            DigestMap.set(new HashMap<String, ResponseCtx>());
+            DigestMap.set(new HashMap<String, ResponseType>());
     }
 
-    private ResponseCtx sendHttpPost(RequestCtx requestCtx) {
-        ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        requestCtx.encode(bout, new Indenter(0), true);
-        byte[] byteArray = bout.toByteArray();
-        byte[] msgDigest = getDigestBytes(byteArray);
-
-        if (msgDigest != null) {
-            ResponseCtx responseCtx = DigestMap.get().get(new String(msgDigest));
-            if (responseCtx != null) {
-                return responseCtx;
-            }
-        }
-
+    private ResponseType sendHttpPost(RequestType requestCtx) {
+        ByteArrayOutputStream bout = null;
         try {
+            bout = new ByteArrayOutputStream();
+
+            RequestMarshaller.marshal(requestCtx, bout);
+            byte[] byteArray = bout.toByteArray();
+            byte[] msgDigest = getDigestBytes(byteArray);
+
+            if (msgDigest != null) {
+                ResponseType responseCtx = DigestMap.get().get(new String(msgDigest));
+                if (responseCtx != null) {
+                    return responseCtx;
+                }
+            }
+
             HttpURLConnection conn = (HttpURLConnection) pdpURL.openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-type", "text/xml, application/xml");
@@ -182,13 +187,21 @@ public class XACMLHttpTransport extends XACMLAbstractTransport {
             out.write(byteArray);
             out.close();
             InputStream in = conn.getInputStream();
-            ResponseCtx result = ResponseCtx.getInstance(in);
+            ResponseType result = ResponseMarshaller.unmarshal(in);
             in.close();
             if (msgDigest != null)
                 DigestMap.get().put(new String(msgDigest), result);
             return result;
         } catch (Exception e) {
             throw new RuntimeException(e);
+        } finally {
+            if (bout != null) {
+                try {
+                    bout.close();
+                } catch (IOException e) {
+                    //do nothing
+                }
+            }
         }
     }
 

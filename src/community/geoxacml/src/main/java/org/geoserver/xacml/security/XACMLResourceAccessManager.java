@@ -5,47 +5,31 @@
 
 package org.geoserver.xacml.security;
 
+import org.geoserver.catalog.*;
+import org.geoserver.security.*;
+import org.geoserver.xacml.geoxacml.XACMLConstants;
+import org.geoserver.xacml.geoxacml.XACMLUtil;
+import org.geoserver.xacml.request.RequestCtxBuilderFactory;
+import org.geoserver.xacml.role.XACMLRole;
+import org.geoserver.xacml.role.XACMLRoleAuthority;
+import org.geotools.xacml.transport.XACMLTransport;
+import org.herasaf.xacml.core.SyntaxException;
+import org.herasaf.xacml.core.context.impl.DecisionType;
+import org.herasaf.xacml.core.context.impl.RequestType;
+import org.herasaf.xacml.core.context.impl.ResponseType;
+import org.herasaf.xacml.core.context.impl.ResultType;
+import org.herasaf.xacml.core.policy.impl.AttributeAssignmentType;
+import org.herasaf.xacml.core.policy.impl.ObligationType;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
-
-import org.geoserver.catalog.LayerInfo;
-import org.geoserver.catalog.ResourceInfo;
-import org.geoserver.catalog.WorkspaceInfo;
-import org.geoserver.security.AccessMode;
-import org.geoserver.xacml.geoxacml.GeoXACMLConfig;
-import org.geoserver.xacml.geoxacml.XACMLConstants;
-import org.geoserver.xacml.geoxacml.XACMLUtil;
-import org.geoserver.xacml.role.XACMLRole;
-
-import com.sun.xacml.Obligation;
-import com.sun.xacml.attr.StringAttribute;
-import com.sun.xacml.ctx.Attribute;
-import com.sun.xacml.ctx.RequestCtx;
-import com.sun.xacml.ctx.ResponseCtx;
-import com.sun.xacml.ctx.Result;
 import java.util.logging.Level;
-import org.geoserver.catalog.CoverageInfo;
-import org.geoserver.catalog.FeatureTypeInfo;
-import org.geoserver.catalog.LayerGroupInfo;
-import org.geoserver.catalog.StyleInfo;
-import org.geoserver.catalog.WMSLayerInfo;
-import org.geoserver.security.CatalogMode;
-import org.geoserver.security.CoverageAccessLimits;
-import org.geoserver.security.DataAccessLimits;
-import org.geoserver.security.DataAccessManager;
-import org.geoserver.security.DataAccessManagerAdapter;
-import org.geoserver.security.LayerGroupAccessLimits;
-import org.geoserver.security.ResourceAccessManager;
-import org.geoserver.security.StyleAccessLimits;
-import org.geoserver.security.VectorAccessLimits;
-import org.geoserver.security.WMSAccessLimits;
-import org.geoserver.security.WorkspaceAccessLimits;
-import org.opengis.filter.Filter;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
+import java.util.logging.Logger;
 
 public class XACMLResourceAccessManager implements ResourceAccessManager, DataAccessManager {
 
@@ -54,6 +38,10 @@ public class XACMLResourceAccessManager implements ResourceAccessManager, DataAc
     private final Object modeLock = new Object();
 
     private final DataAccessManagerAdapter adapter;
+
+    private final XACMLRoleAuthority xacmlRoleAuthority;
+    private final XACMLTransport xacmlTransport;
+    private final RequestCtxBuilderFactory requestCtxBuilderFactory;
 
     private static final Logger Log =
             Logger.getLogger(XACMLResourceAccessManager.class.getName());
@@ -66,56 +54,62 @@ public class XACMLResourceAccessManager implements ResourceAccessManager, DataAc
         CatalogModeMap.put("MIXED", CatalogMode.MIXED);
     }
 
-    public XACMLResourceAccessManager() {
-        GeoXACMLConfig.createDefaultRepositoryIfNotExisting();
+    @Autowired
+    public XACMLResourceAccessManager(RequestCtxBuilderFactory requestCtxBuilderFactory, XACMLRoleAuthority xacmlRoleAuthority, XACMLTransport xacmlTransport) {
+        this.xacmlRoleAuthority = xacmlRoleAuthority;
+        this.xacmlTransport = xacmlTransport;
+        this.requestCtxBuilderFactory = requestCtxBuilderFactory;
         this.adapter = new DataAccessManagerAdapter(this);
     }
 
     @Override
     public boolean canAccess(Authentication user, WorkspaceInfo workspace, AccessMode mode) {
-        GeoXACMLConfig.getXACMLRoleAuthority().prepareRoles(user);
-        List<RequestCtx> requestCtxts = buildWorkspaceRequestCtxListFromRoles(user, workspace, mode);
+        //TODO: validate this never, ever occurs except on init
+        if(user == null){
+            return true;
+        }
+
+        xacmlRoleAuthority.prepareRoles(user);
+        List<RequestType> requestCtxts = buildWorkspaceRequestCtxListFromRoles(user, workspace, mode);
         if (requestCtxts.isEmpty())
             return false;
 
-        List<ResponseCtx> responseCtxts = GeoXACMLConfig.getXACMLTransport()
+        List<ResponseType> responseCtxts = xacmlTransport
                 .evaluateRequestCtxList(requestCtxts);
 
-        int xacmlDecision = XACMLUtil.getDecisionFromRoleResponses(responseCtxts);
+        DecisionType xacmlDecision = XACMLUtil.getDecisionFromRoleResponses(responseCtxts);
 
-        if (xacmlDecision == Result.DECISION_PERMIT)
+        if(xacmlDecision == DecisionType.PERMIT)
             return true;
+
         return false;
     }
 
     @Override
     public boolean canAccess(Authentication user, LayerInfo layer, AccessMode mode) {
         return canAccess(user, layer.getResource(), mode);
-        // List<RequestCtx> requestCtxts = buildLayerInfoRequestCtxListFromRoles(user, layer, mode);
-        // List<ResponseCtx> responseCtxts =
-        // GeoXACMLConfig.getXACMLTransport().evaluateRequestCtxList(requestCtxts);
-        //
-        // int xacmlDecision = XACMLUtil.getDecisionFromRoleResponses(responseCtxts);
-        //
-        // if (xacmlDecision == Result.DECISION_PERMIT)
-        // return true;
-        // return false;
     }
 
     @Override
     public boolean canAccess(Authentication user, ResourceInfo resource, AccessMode mode) {
-        GeoXACMLConfig.getXACMLRoleAuthority().prepareRoles(user);
-        List<RequestCtx> requestCtxts = buildResourceInfoRequestCtxListFromRoles(user, resource,
+
+        //TODO: validate this never, ever occurs except on init
+        if(user == null){
+            return true;
+        }
+
+        xacmlRoleAuthority.prepareRoles(user);
+        List<RequestType> requestCtxts = buildResourceInfoRequestCtxListFromRoles(user, resource,
                 mode);
         if (requestCtxts.isEmpty())
             return false;
 
-        List<ResponseCtx> responseCtxts = GeoXACMLConfig.getXACMLTransport()
+        List<ResponseType> responseCtxts = xacmlTransport
                 .evaluateRequestCtxList(requestCtxts);
 
-        int xacmlDecision = XACMLUtil.getDecisionFromRoleResponses(responseCtxts);
+        DecisionType xacmlDecision = XACMLUtil.getDecisionFromRoleResponses(responseCtxts);
 
-        if (xacmlDecision == Result.DECISION_PERMIT)
+        if (xacmlDecision == DecisionType.PERMIT)
             return true;
         return false;
     }
@@ -126,37 +120,50 @@ public class XACMLResourceAccessManager implements ResourceAccessManager, DataAc
             if (mode != null)
                 return mode;
 
-            RequestCtx requestCtx = GeoXACMLConfig.getRequestCtxBuilderFactory()
-                    .getCatalogRequestCtxBuilder().createRequestCtx();
-            ResponseCtx responseCtx = GeoXACMLConfig.getXACMLTransport().evaluateRequestCtx(
+            RequestType requestCtx = requestCtxBuilderFactory.getCatalogRequestCtxBuilder().createRequest();
+            ResponseType responseCtx = xacmlTransport.evaluateRequestCtx(
                     requestCtx);
 
-            Result result = responseCtx.getResults().iterator().next();
-            if (result == null || result.getDecision() != Result.DECISION_PERMIT) {
+            ResultType result = responseCtx.getResults().iterator().next();
+            if (result == null || result.getDecision() != DecisionType.PERMIT){
                 Log.severe("Geserver cannot access its catalog !!!");
                 Log.severe(XACMLUtil.asXMLString(requestCtx));
                 return useDefaultMode();
             }
 
-            Obligation obligation = result.getObligations().iterator().next();
+            ObligationType obligation = null;
+            try{
+                obligation = result.getObligations().getObligations().iterator().next();
+            }catch(NullPointerException e){
+                //ignore
+            }
+
             if (obligation == null
-                    || XACMLConstants.CatalogModeObligationId.equals(obligation.getId()
-                            .toASCIIString()) == false) {
+                    || XACMLConstants.CatalogModeObligationId.equals(obligation.getObligationId()
+                            .toString()) == false) {
                 Log.severe("No obligation with id: " + XACMLConstants.CatalogModeObligationId);
                 Log.severe(XACMLUtil.asXMLString(requestCtx));
                 return useDefaultMode();
             }
 
-            Attribute catalogModeAssignment = obligation.getAssignments().iterator().next();
+            AttributeAssignmentType attributeAssignment = obligation.getAttributeAssignments().iterator().next();
+
+            String catalogModeAssignment = null;
+            try {
+                catalogModeAssignment = (attributeAssignment == null) ? null :
+                    attributeAssignment.getDataType().convertTo(attributeAssignment.getContent()).toString();
+            }catch(SyntaxException e){
+                Log.log(Level.SEVERE, "Error while processing AttributeAssignment value", e);
+            }
+
             if (catalogModeAssignment == null
-                    || CatalogModeMap.containsKey(((StringAttribute) catalogModeAssignment
-                            .getValue()).getValue()) == false) {
+                    || CatalogModeMap.containsKey(catalogModeAssignment) == false){
                 Log.severe("No valid catalog mode ");
                 Log.severe(XACMLUtil.asXMLString(requestCtx));
                 return useDefaultMode();
             }
 
-            String catalogModeKey = ((StringAttribute) catalogModeAssignment.getValue()).getValue();
+            String catalogModeKey = (catalogModeAssignment);
             mode = CatalogModeMap.get(catalogModeKey);
             return mode;
         }
@@ -169,38 +176,34 @@ public class XACMLResourceAccessManager implements ResourceAccessManager, DataAc
         return mode;
     }
 
-    private List<RequestCtx> buildWorkspaceRequestCtxListFromRoles(Authentication auth,
+    private List<RequestType> buildWorkspaceRequestCtxListFromRoles(Authentication auth,
             WorkspaceInfo workspaceInfo, AccessMode mode) {
 
-        List<RequestCtx> resultList = new ArrayList<RequestCtx>();
+        List<RequestType> resultList = new ArrayList<RequestType>();
 
         for (GrantedAuthority role : auth.getAuthorities()) {
             XACMLRole xacmlRole = (XACMLRole) role;
             if (xacmlRole.isEnabled() == false)
                 continue;
-            RequestCtx requestCtx = GeoXACMLConfig.getRequestCtxBuilderFactory()
-                    .getWorkspaceRequestCtxBuilder(xacmlRole, workspaceInfo, mode)
-                    .createRequestCtx();
-            // XACMLUtil.getXACMLLogger().info(XACMLUtil.asXMLString(requestCtx));
+            RequestType requestCtx = requestCtxBuilderFactory.getWorkspaceRequestCtxBuilder(xacmlRole, workspaceInfo, mode)
+                    .createRequest();
             resultList.add(requestCtx);
         }
 
         return resultList;
     }
 
-    private List<RequestCtx> buildResourceInfoRequestCtxListFromRoles(Authentication auth,
+    private List<RequestType> buildResourceInfoRequestCtxListFromRoles(Authentication auth,
             ResourceInfo resourceInfo, AccessMode mode) {
 
-        List<RequestCtx> resultList = new ArrayList<RequestCtx>();
+        List<RequestType> resultList = new ArrayList<RequestType>();
 
         for (GrantedAuthority role : auth.getAuthorities()) {
             XACMLRole xacmlRole = (XACMLRole) role;
             if (xacmlRole.isEnabled() == false)
                 continue;
-            RequestCtx requestCtx = GeoXACMLConfig.getRequestCtxBuilderFactory()
-                    .getResourceInfoRequestCtxBuilder(xacmlRole, resourceInfo, mode)
-                    .createRequestCtx();
-            // XACMLUtil.getXACMLLogger().info(XACMLUtil.asXMLString(requestCtx));
+            RequestType requestCtx = requestCtxBuilderFactory.getResourceInfoRequestCtxBuilder(xacmlRole, resourceInfo, mode)
+                    .createRequest();
             resultList.add(requestCtx);
         }
 
@@ -209,26 +212,46 @@ public class XACMLResourceAccessManager implements ResourceAccessManager, DataAc
 
     @Override
     public WorkspaceAccessLimits getAccessLimits(Authentication user, WorkspaceInfo workspace) {
+        //TODO: validate this never, ever occurs except on init
+        if(user == null){
+            return null;
+        }
         return adapter.getAccessLimits(user, workspace);
     }
 
     @Override
     public DataAccessLimits getAccessLimits(final Authentication user, final LayerInfo layer) {
+        //TODO: validate this never, ever occurs except on init
+        if(user == null){
+            return null;
+        }
         return adapter.getAccessLimits(user, layer);
     }
 
     @Override
     public DataAccessLimits getAccessLimits(Authentication user, ResourceInfo resource) {
+        //TODO: validate this never, ever occurs except on init
+        if(user == null){
+            return null;
+        }
         return adapter.getAccessLimits(user, resource);
     }
 
     @Override
     public StyleAccessLimits getAccessLimits(Authentication user, StyleInfo style) {
+        //TODO: validate this never, ever occurs except on init
+        if(user == null){
+            return null;
+        }
         return adapter.getAccessLimits(user, style);
     }
 
     @Override
     public LayerGroupAccessLimits getAccessLimits(Authentication user, LayerGroupInfo layerGroup) {
+        //TODO: validate this never, ever occurs except on init
+        if(user == null){
+            return null;
+        }
         return adapter.getAccessLimits(user, layerGroup);
     }
 
