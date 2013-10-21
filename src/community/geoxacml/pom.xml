@@ -134,18 +134,10 @@
       <dependency>
           <groupId>org.springframework.security.extensions</groupId>
           <artifactId>spring-security-saml2-core</artifactId>
-          <version>1.0.0.RC3-SNAPSHOT</version>
+          <version>1.0.0.RC2</version>
       </dependency>
 
   </dependencies>
-
-  <repositories>
-    <repository>
-      <id>maven.herasaf.org</id>
-      <name>maven.herasaf.org-releases</name>
-      <url>http://maven.herasaf.org/herasaf-release</url>
-     </repository>
-  </repositories>
 
 </project>
 
