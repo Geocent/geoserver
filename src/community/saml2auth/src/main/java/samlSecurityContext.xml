@@ -72,7 +72,7 @@
         <constructor-arg>
             <ref bean="keyInfoMap" />
         </constructor-arg>
-        <constructor-arg type="java.lang.String" value="${saml.keys.default}"/>
+        <constructor-arg type="java.lang.String" value="${saml.key}"/>
     </bean>
 
     <!-- Entry point to initialize authentication, default values taken from properties file -->
@@ -94,6 +94,7 @@
 
     <bean id="metadataGenerator" class="org.springframework.security.saml.metadata.MetadataGenerator">
         <property name="entityId" value="${application.entityId}" />
+        <!--property name="entityBaseURL" value="${geoserver.url}" /-->
         <property name="entityAlias" value="defaultAlias"/>
         <property name="signMetadata" value="false"/>
         <property name="nameID">
@@ -103,11 +104,18 @@
                 <value>UNSPECIFIED</value>
             </list>
         </property>
+        <property name="includeDiscovery" value="false"/>
+        <property name="signingKey" value="${saml.key}"/>
+        <property name="requestSigned" value="true"/>
+        <property name="wantAssertionSigned" value="true"/>
         <property name="extendedMetadata">
             <bean class="org.springframework.security.saml.metadata.ExtendedMetadata">
                 <property name="ecpEnabled" value="true"/>
                 <property name="trustedKeys" value="${saml.keys.trusted}"/>
-                <property name="signingKey" value="${saml.keys.signing}"/>
+                <property name="signingKey" value="${saml.key}"/>
+                <property name="requireArtifactResolveSigned" value="true"/>
+                <property name="requireLogoutRequestSigned" value="true"/>
+                <property name="requireLogoutResponseSigned" value="true"/>
             </bean>
         </property>
     </bean>
@@ -136,6 +144,9 @@
                     </constructor-arg>
                     <constructor-arg>
                         <bean class="org.springframework.security.saml.metadata.ExtendedMetadata">
+                            <property name="requireArtifactResolveSigned" value="true"/>
+                            <property name="requireLogoutRequestSigned" value="true"/>
+                            <property name="requireLogoutResponseSigned" value="true"/>
                         </bean>
                     </constructor-arg>
                 </bean>
@@ -174,7 +185,14 @@
     </bean>
 
     <!-- Provider of default SAML Context -->
-    <bean id="contextProvider" class="org.springframework.security.saml.context.SAMLContextProviderImpl"/>
+    <bean id="contextProvider"
+        class="org.springframework.security.saml.context.SAMLContextProviderLB">
+        <property name="scheme" value="${geoserver.url.scheme}"/>
+        <property name="serverName" value="${geoserver.url.host}"/>
+        <property name="serverPort" value="${geoserver.url.port}"/>
+        <property name="includeServerPortInRequestURL" value="${geoserver.url.includePortInURL}"/>
+        <property name="contextPath" value="${geoserver.url.path}"/>
+    </bean>
 
     <!-- Processing filter for WebSSO profile messages -->
     <bean id="samlWebSSOProcessingFilter" class="org.springframework.security.saml.SAMLProcessingFilter">
@@ -191,7 +209,7 @@
     <!-- Logout handler terminating local session -->
     <bean id="logoutHandler"
           class="org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler">
-        <property name="invalidateHttpSession" value="false"/>
+        <property name="invalidateHttpSession" value="true"/>
     </bean>
 
     <!-- Override default logout processing filter with the one processing SAML messages -->

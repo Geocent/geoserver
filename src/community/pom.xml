@@ -177,6 +177,8 @@
     <profile>
         <id>saml2auth</id>
         <modules>
+            <module>geoxacml</module>
+            <module>geoxacml-common</module>
             <module>saml2auth</module>
         </modules>
     </profile>
