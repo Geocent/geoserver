@@ -7,6 +7,8 @@ package org.geoserver.xacml.role;
 import com.vividsolutions.jts.geom.Geometry;
 import org.geoserver.security.impl.GeoServerUser;
 import org.geoserver.xacml.geoxacml.XACMLConstants;
+import org.geoserver.xacml.geoxacml.XACMLUtil;
+import org.geoserver.xacml.request.RequestCtxBuilder;
 import org.geoserver.xacml.request.RequestCtxBuilderFactory;
 import org.geotools.xacml.geoxacml.attr.GeometryDataTypeAttribute;
 import org.geotools.xacml.transport.XACMLTransport;
@@ -50,9 +52,7 @@ public class XACMLDefaultRoleAuthority implements XACMLRoleAuthority<GeoServerUs
         Set<GrantedAuthority> newAuthorities = new HashSet();
 
         for (GrantedAuthority grantedAuthority : details.getAuthorities()) {
-            XACMLRole role = new XACMLRole(grantedAuthority.getAuthority());
-            //TODO: Allow list of disabled roles?
-            role.setEnabled(true);
+            XACMLRole role = XACMLUtil.toXACMLRoleFrom(grantedAuthority);
             newAuthorities.add(role);
         }
 
@@ -82,16 +82,18 @@ public class XACMLDefaultRoleAuthority implements XACMLRoleAuthority<GeoServerUs
         }
 
         for (GrantedAuthority ga : auth.getAuthorities()) {
-            requests.add(requestCtxBuilderFactory.getXACMLRoleRequestCtxBuilder((XACMLRole) ga, userName).createRequest());
+            RequestCtxBuilder requestCtxBuilder = requestCtxBuilderFactory.getXACMLRoleRequestCtxBuilder(ga, userName);
+            RequestType requestType = requestCtxBuilder.createRequest();
+            requests.add(requestType);
         }
 
         List<ResponseType> responses = transport.evaluateRequestCtxList(
                 requests);
 
-        Object[] authorities = (Object[]) auth.getAuthorities().toArray();
+        Object[] authorities = auth.getAuthorities().toArray();
         outer: for (int i = 0; i < responses.size(); i++) {
             ResponseType response = responses.get(i);
-            XACMLRole role = (XACMLRole) authorities[i];
+            XACMLRole role = XACMLUtil.toXACMLRoleFrom((GrantedAuthority)authorities[i]);
             for (ResultType result : response.getResults()) {
                 if (result.getDecision() != DecisionType.PERMIT) {
                     role.setEnabled(false);

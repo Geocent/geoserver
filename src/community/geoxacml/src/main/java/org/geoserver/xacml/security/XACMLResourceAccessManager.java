@@ -182,7 +182,7 @@ public class XACMLResourceAccessManager implements ResourceAccessManager, DataAc
         List<RequestType> resultList = new ArrayList<RequestType>();
 
         for (GrantedAuthority role : auth.getAuthorities()) {
-            XACMLRole xacmlRole = (XACMLRole) role;
+            XACMLRole xacmlRole = XACMLUtil.toXACMLRoleFrom(role);
             if (xacmlRole.isEnabled() == false)
                 continue;
             RequestType requestCtx = requestCtxBuilderFactory.getWorkspaceRequestCtxBuilder(xacmlRole, workspaceInfo, mode)
@@ -199,7 +199,7 @@ public class XACMLResourceAccessManager implements ResourceAccessManager, DataAc
         List<RequestType> resultList = new ArrayList<RequestType>();
 
         for (GrantedAuthority role : auth.getAuthorities()) {
-            XACMLRole xacmlRole = (XACMLRole) role;
+            XACMLRole xacmlRole = XACMLUtil.toXACMLRoleFrom(role);
             if (xacmlRole.isEnabled() == false)
                 continue;
             RequestType requestCtx = requestCtxBuilderFactory.getResourceInfoRequestCtxBuilder(xacmlRole, resourceInfo, mode)

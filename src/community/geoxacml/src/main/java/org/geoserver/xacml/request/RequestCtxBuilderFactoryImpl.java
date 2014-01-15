@@ -11,6 +11,7 @@ import org.geoserver.catalog.ResourceInfo;
 import org.geoserver.catalog.WorkspaceInfo;
 import org.geoserver.security.AccessMode;
 import org.geoserver.xacml.role.XACMLRole;
+import org.springframework.security.core.GrantedAuthority;
 
 /**
  * Default implementation for {@link RequestCtxBuilderFactory}
@@ -24,7 +25,7 @@ public class RequestCtxBuilderFactoryImpl implements RequestCtxBuilderFactory {
         return new CatalogRequestCtxBuilder();
     }
 
-    public RequestCtxBuilder getXACMLRoleRequestCtxBuilder(XACMLRole targetRole, String userName) {
+    public RequestCtxBuilder getXACMLRoleRequestCtxBuilder(GrantedAuthority targetRole, String userName) {
         return new XACMLRoleRequestCtxBuilder(targetRole, userName);
     }
 

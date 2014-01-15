@@ -5,6 +5,7 @@
 
 package org.geoserver.xacml.geoxacml;
 
+import org.geoserver.xacml.role.XACMLRole;
 import org.herasaf.xacml.core.WritingException;
 import org.herasaf.xacml.core.context.RequestMarshaller;
 import org.herasaf.xacml.core.context.ResponseMarshaller;
@@ -143,4 +144,16 @@ public class XACMLUtil {
         return Logger.getLogger("XACML");
     }
 
+    public static XACMLRole toXACMLRoleFrom(GrantedAuthority grantedAuthority) {
+        XACMLRole xacmlRole;
+        if (grantedAuthority instanceof XACMLRole) {
+            xacmlRole = (XACMLRole) grantedAuthority;
+        } else {
+            XACMLRole role = new XACMLRole(grantedAuthority.getAuthority());
+            //TODO: Allow list of disabled roles?
+            role.setEnabled(true);
+            xacmlRole = role;
+        }
+        return xacmlRole;
+    }
 }

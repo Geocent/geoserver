@@ -9,6 +9,7 @@ import org.geoserver.catalog.ResourceInfo;
 import org.geoserver.catalog.WorkspaceInfo;
 import org.geoserver.security.AccessMode;
 import org.geoserver.xacml.role.XACMLRole;
+import org.springframework.security.core.GrantedAuthority;
 
 import java.util.Map;
 
@@ -22,7 +23,7 @@ import java.util.Map;
 public interface RequestCtxBuilderFactory {
     public RequestCtxBuilder getCatalogRequestCtxBuilder();
 
-    public RequestCtxBuilder getXACMLRoleRequestCtxBuilder(XACMLRole targetRole, String userName);
+    public RequestCtxBuilder getXACMLRoleRequestCtxBuilder(GrantedAuthority targetRole, String userName);
 
     public RequestCtxBuilder getWorkspaceRequestCtxBuilder(XACMLRole role, WorkspaceInfo info,
             AccessMode mode);

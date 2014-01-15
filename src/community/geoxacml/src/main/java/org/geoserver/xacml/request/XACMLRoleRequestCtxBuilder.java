@@ -11,6 +11,7 @@ import org.geoserver.xacml.geoxacml.XACMLConstants;
 import org.geoserver.xacml.role.XACMLRole;
 import org.herasaf.xacml.core.context.impl.*;
 import org.herasaf.xacml.core.dataTypeAttribute.impl.StringDataTypeAttribute;
+import org.springframework.security.core.GrantedAuthority;
 
 /**
  * Builds a request for testing access of geoserver to the catalog (always Permit) The idea here is
@@ -23,11 +24,11 @@ public class XACMLRoleRequestCtxBuilder extends RequestCtxBuilder {
     public final static XACMLRole RoleEnablementRole = new XACMLRole(
             XACMLConstants.RoleEnablementRole);
 
-    XACMLRole targetRole = null;
+    GrantedAuthority targetRole = null;
 
     String userName = null;
 
-    public XACMLRoleRequestCtxBuilder(XACMLRole targetRole, String userName) {
+    public XACMLRoleRequestCtxBuilder(GrantedAuthority targetRole, String userName) {
         super(RoleEnablementRole, AccessMode.READ.toString());
         this.targetRole = targetRole;
         this.userName = userName;
